@@ -37,12 +37,25 @@ def get_answer(question, story):
 
     """
     ###     Your Code Goes Here         ###
+    for q in question:
+        print (q)
 
     answer = "whatever you think the answer is"
 
 
+
     ###     End of Your Code         ###
     return answer
+
+def get_best_sentences(question, story):
+
+    #Function to break apart question
+
+    #get_sentence question
+    #get sentence subject
+    #get_sentence verb
+
+    return sentences
 
 
 
