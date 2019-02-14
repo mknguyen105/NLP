@@ -1,6 +1,7 @@
 
 from qa_engine.base import QABase
 from qa_engine.score_answers import main as score_answers
+import nltk
 
 
 def get_answer(question, story):
@@ -35,25 +36,77 @@ def get_answer(question, story):
         sid --  the story id
 
 
-    """
     ###     Your Code Goes Here         ###
-    for q in question:
-        print (q)
+    """
 
+    for x in question:
+        dep = question["dep"]
+        par = question["par"]
+        text = question["text"]
+        sid = question["sid"]
+        difficulty = question["difficulty"]
+        type = question["type"]
+        qid = question["qid"]
+
+        story_dep = story["story_dep"]
+        sch_dep = story["sch_dep"]
+        sch_par = story ["sch_par"]
+        story_par = story["story_par"]
+        sch = story["sch"]
+        story_text = story["text"]
+        sid = story["sid"]
+
+        if type == "Story":
+            answer = process_difficulty(dep, par, text, sid, difficulty, qid, story_text)
+        else: #sch | (story | sch)
+            answer = process_difficulty(dep, par, text, sid, difficulty, qid, sch)
+
+    """"""
     answer = "whatever you think the answer is"
-
-
 
     ###     End of Your Code         ###
     return answer
 
-def get_best_sentences(question, story):
+def process_difficulty(dep, par, text, sid, difficulty, qid, story_text):
+    if difficulty == "Easy":
+        sentences = get_best_sentences(dep, par, text, sid, qid, story_text)
+
+def get_best_sentences(dep, par, text, sid, qid, story):
+
+    print("Dep")
+    print(dep)
+    print("Par")
+    print(par)
+    print("Text")
+    print(text)
+
+    best_sentences = []
+    sentences = nltk.sent_tokenize(story)
+    question_words = nltk.word_tokenize(text)
+
+    for x in sentences:
+        count = 0
+        sentence_words = nltk.word_tokenize(x)
+        for y in sentence_words:
+            for k in question_words:
+                if y == k:
+                    count = count + 1
+        if count > 3:
+            best_sentences.append(x)
+
+    print("Best Sentences")
+    print(best_sentences)
+
+    #sentence tokenize
 
     #Function to break apart question
 
     #get_sentence question
     #get sentence subject
     #get_sentence verb
+
+    #Look into parse tree
+
 
     return sentences
 
