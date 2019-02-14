@@ -38,7 +38,7 @@ def get_answer(question, story):
 
     ###     Your Code Goes Here         ###
     """
-
+    #Problem is to fix loop count. Repeated questions. Loop every 7
     for x in question:
         dep = question["dep"]
         par = question["par"]
@@ -61,26 +61,30 @@ def get_answer(question, story):
         else: #sch | (story | sch)
             answer = process_difficulty(dep, par, text, sid, difficulty, qid, sch)
 
+        return answer
+
     """"""
-    answer = "whatever you think the answer is"
+    #answer = "whatever you think the answer is"
 
     ###     End of Your Code         ###
-    return answer
+    #return answer
 
 def process_difficulty(dep, par, text, sid, difficulty, qid, story_text):
     if difficulty == "Easy":
-        sentences = get_best_sentences(dep, par, text, sid, qid, story_text)
+        sentences = get_best_sentences_count(dep, par, text, sid, qid, story_text)
+        sentence = get_sentence(sentences)
 
-def get_best_sentences(dep, par, text, sid, qid, story):
+        print("Question: " + text)
+        print("Best Sentence: " + sentence)
 
-    print("Dep")
-    print(dep)
-    print("Par")
-    print(par)
-    print("Text")
-    print(text)
+        return sentence
 
-    best_sentences = []
+
+def get_best_sentences_count(dep, par, text, sid, qid, story):
+    """
+    Loops through the sentences and creates a dictionary of sentence: count of words that match
+    """
+    best_sentences = {}
     sentences = nltk.sent_tokenize(story)
     question_words = nltk.word_tokenize(text)
 
@@ -91,25 +95,21 @@ def get_best_sentences(dep, par, text, sid, qid, story):
             for k in question_words:
                 if y == k:
                     count = count + 1
-        if count > 3:
-            best_sentences.append(x)
+        best_sentences[x] = count
 
-    print("Best Sentences")
-    print(best_sentences)
+    return best_sentences
 
-    #sentence tokenize
-
-    #Function to break apart question
-
-    #get_sentence question
-    #get sentence subject
-    #get_sentence verb
-
-    #Look into parse tree
-
-
-    return sentences
-
+def get_sentence(sentences):
+    """
+    Loops through dictionary (sentence: count of words that match) and chooses the sentence with the highest count
+    """
+    best_number = 0
+    best_sentence = ""
+    for s in sentences:
+        if(sentences[s] > best_number):
+            best_number = sentences[s]
+            best_sentence = s
+    return best_sentence
 
 
 #############################################################
