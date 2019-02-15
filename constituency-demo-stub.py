@@ -6,7 +6,6 @@ from nltk.tree import Tree
 
 from qa_engine.base import QABase
 
-
 # See if our pattern matches the current root of the tree
 def matches(pattern, root):
     # Base cases to exit our recursion
