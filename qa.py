@@ -73,16 +73,17 @@ def get_question_type(question):
 
     # How
 
+# This function will return a list of sentences in the story that contain non-stopwords from the question
 def get_best_sentences(question, story):
     story_text = story['text']
     question_text = question['text']
     question_words = nltk.word_tokenize(question_text)
     sentences = nltk.sent_tokenize(story_text)
     sentences = [nltk.word_tokenize(sent) for sent in sentences]
-
-
     question_words = [word.lower() for word in question_words if word.lower() not in nltk.corpus.stopwords.words('english') and word.isalpha()]
-    print(question_words)
+
+    # Iterate through each word of each sentence in the story, checking if words from the question are in the sentence
+    # If there is a match, add the sentence to best sentences, and join the words of the sentences before returning them
     best_sentences = []
     for sent in sentences:
         for word in sent:
@@ -92,13 +93,15 @@ def get_best_sentences(question, story):
     return [' '.join(sent) for sent in best_sentences]
 
 
-
+# Iterates through the constituency tree, checking for a given pattern of parts of speech, returning a subtree
+# containing it if found, else, returns none
 def pattern_matcher(pattern, tree):
     for subtree in tree.subtrees():
         node = matches(pattern, subtree)
         if node is not None:
             return node
     return None
+
 
 def get_likely_answers(question, story):
     tree = story["sch_par"][1]
