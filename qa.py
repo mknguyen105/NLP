@@ -73,6 +73,25 @@ def get_question_type(question):
 
     # How
 
+def get_best_sentences(question, story):
+    story_text = story['text']
+    question_text = question['text']
+    question_words = nltk.word_tokenize(question_text)
+    sentences = nltk.sent_tokenize(story_text)
+    sentences = [nltk.word_tokenize(sent) for sent in sentences]
+
+
+    question_words = [word.lower() for word in question_words if word.lower() not in nltk.corpus.stopwords.words('english') and word.isalpha()]
+    print(question_words)
+    best_sentences = []
+    for sent in sentences:
+        for word in sent:
+            if word.lower() in question_words:
+                best_sentences.append(sent)
+                break
+    return [' '.join(sent) for sent in best_sentences]
+
+
 
 def pattern_matcher(pattern, tree):
     for subtree in tree.subtrees():
@@ -82,14 +101,11 @@ def pattern_matcher(pattern, tree):
     return None
 
 def get_likely_answers(question, story):
+    tree = story["sch_par"][1]
     question_type = get_question_type(question)
 
     if question_type == 'where':
         pattern = nltk.ParentedTree.fromstring("(VP (*) (PP))")
-    #pattern = get_question_pattern()
-
-
-    tree = story["sch_par"][1]
 
     subtree = pattern_matcher(pattern, tree)
     sub_sentence = get_tree_words(subtree)[1:]
@@ -131,9 +147,8 @@ def get_answer(question, story):
 
     """
     ###     Your Code Goes Here         ###
-    sentences = get_likely_answers(question, story)
+    sentences = get_best_sentences(question, story)
     answer = "whatever you think the answer is"
-
 
     ###     End of Your Code         ###
     return answer
