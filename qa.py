@@ -73,10 +73,19 @@ def get_question_type(question):
 
     # How
 
-# This function will return a list of sentences in the story that contain non-stopwords from the question
+
+# A better solution may be to use the dependency parse of the question deconstruct the subject direct obj etc..., and
+# then use a regex to find them in the text. So if subj is Crow and direct obj is branch, search for ^\..*(Crow.).*(branch)$
+
+# Naive solution for best sentences
+# Add lemmatizer
+# This function will return a list of tuples of sentences in the story that contain non-stopwords from the question
+# first elm is the sentence, second elm is number of overlapping words. Returns in desc sorted order of overlaps.
 def get_best_sentences(question, story):
     story_text = story['text']
     question_text = question['text']
+    lmtzr = nltk.stem.WordNetLemmatizer()
+
     question_words = nltk.word_tokenize(question_text)
     sentences = nltk.sent_tokenize(story_text)
     sentences = [nltk.word_tokenize(sent) for sent in sentences]
@@ -84,13 +93,19 @@ def get_best_sentences(question, story):
 
     # Iterate through each word of each sentence in the story, checking if words from the question are in the sentence
     # If there is a match, add the sentence to best sentences, and join the words of the sentences before returning them
-    best_sentences = []
+    best_sentences = {}
+    ranked_sentences = []
     for sent in sentences:
         for word in sent:
             if word.lower() in question_words:
-                best_sentences.append(sent)
-                break
-    return [' '.join(sent) for sent in best_sentences]
+                if ' '.join(sent) not in best_sentences:
+                    best_sentences[' '.join(sent)] = 1
+                else:
+                    best_sentences[' '.join(sent)] += 1
+    for (key, value) in best_sentences.items():
+        ranked_sentences.append((key, value))
+    ranked_sentences.sort(key=lambda x: x[1], reverse=True)
+    return best_sentences
 
 
 # Iterates through the constituency tree, checking for a given pattern of parts of speech, returning a subtree
@@ -151,6 +166,7 @@ def get_answer(question, story):
     """
     ###     Your Code Goes Here         ###
     sentences = get_best_sentences(question, story)
+    print(sentences)
     answer = "whatever you think the answer is"
 
     ###     End of Your Code         ###
