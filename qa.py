@@ -1,7 +1,7 @@
 
 from qa_engine.base import QABase
 from qa_engine.score_answers import main as score_answers
-import nltk
+import nltk, re
 
 def get_tree_words(root):
     sent = []
@@ -13,6 +13,13 @@ def get_tree_words(root):
     return sent
 
 
+# Lemmatizes word and lowercases. Then generates a regex pattern that matches the lemmatized word to other forms of the
+# word. So Shipping generates a pattern that will match ship, shipping, Shipping, ships, Ships, shiply and Shiply
+def get_word_pattern(word):
+    lmtzr = nltk.stem.WordNetLemmatizer()
+    word = lmtzr.lemmatize(word.lower())
+    pattern = '\b([' + word[0].upper() + word[0].lower() + ']' + word[1:] +'(ly|(' + word[-1:] + ')ing|s)?)\b'
+    return pattern
 
 def matches(pattern, root):
     # Base cases to exit our recursion
@@ -89,12 +96,23 @@ def get_best_sentences(question, story):
     question_words = nltk.word_tokenize(question_text)
     sentences = nltk.sent_tokenize(story_text)
     sentences = [nltk.word_tokenize(sent) for sent in sentences]
-    question_words = [word.lower() for word in question_words if word.lower() not in nltk.corpus.stopwords.words('english') and word.isalpha()]
+    question_words = [get_word_pattern(word) for word in question_words if word.lower() not in nltk.corpus.stopwords.words('english') and word.isalpha()]
+
 
     # Iterate through each word of each sentence in the story, checking if words from the question are in the sentence
     # If there is a match, add the sentence to best sentences, and join the words of the sentences before returning them
     best_sentences = {}
     ranked_sentences = []
+
+    for pattern in question_words:
+        for sent in sentences:
+            overlaps = re.findall(pattern, sent)
+            if len(overlaps) > 0:
+                if sent not in best_sentences:
+                    best_sentences[sent] = len(overlaps)
+                else:
+                    best_sentences[sent] += len(overlaps)
+
     for sent in sentences:
         for word in sent:
             if word.lower() in question_words:
