@@ -16,6 +16,7 @@ def score_all_answers(gold, pred):
             pred_answer = pred.loc[row.Index]
             pred_words = set(nltk.word_tokenize(pred_answer.answer.lower()))
 
+
             # true positives
             tp = len(gold_words - (gold_words - pred_words))
 

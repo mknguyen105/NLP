@@ -1,7 +1,22 @@
 
 from qa_engine.base import QABase
 from qa_engine.score_answers import main as score_answers
+from nltk.stem.wordnet import WordNetLemmatizer
+from nltk.stem.snowball import SnowballStemmer
+
 import nltk
+STOPWORDS = nltk.corpus.stopwords.words('english')
+
+# Our simple grammar from class (and the book)
+
+GRAMMAR =   """
+            N: {<PRP>|<NN.*>}
+            V: {<V.*>}
+            ADJ: {<JJ.*>}
+            NP: {<DT>? <ADJ>* <N>+}
+            PP: {<IN> <NP>}
+            VP: {<TO>? <V> (<NP>|<PP>)*}
+            """
 
 
 def get_answer(question, story):
@@ -38,6 +53,11 @@ def get_answer(question, story):
 
     ###     Your Code Goes Here         ###
     """
+
+    chunker = nltk.RegexpParser(GRAMMAR)
+    lmtzr = WordNetLemmatizer()
+
+
     #Problem is to fix loop count. Repeated questions. Loop every 7
     for x in question:
         dep = question["dep"]
@@ -70,12 +90,25 @@ def get_answer(question, story):
     #return answer
 
 def process_difficulty(dep, par, text, sid, difficulty, qid, story_text):
+    """
+    Chooses tactic based on difficulty, then gets the best sentences and chooses the one with the highest count
+
+    :param dep:
+    :param par:
+    :param text:
+    :param sid:
+    :param difficulty:
+    :param qid:
+    :param story_text:
+    :return sentence
+    """
     if difficulty == "Easy":
         sentences = get_best_sentences_count(dep, par, text, sid, qid, story_text)
         sentence = get_sentence(sentences)
 
         print("Question: " + text)
         print("Best Sentence: " + sentence)
+        print("QID: " + qid)
 
         return sentence
 
@@ -85,16 +118,38 @@ def get_best_sentences_count(dep, par, text, sid, qid, story):
     Loops through the sentences and creates a dictionary of sentence: count of words that match
     """
     best_sentences = {}
+    stemmer = SnowballStemmer("english")
     sentences = nltk.sent_tokenize(story)
     question_words = nltk.word_tokenize(text)
+    pos = nltk.pos_tag(question_words)
+
+    """
+    Answer Identification
+    - Basic Word Overlap:
+    - Stop Words:
+    - Roots: 
+    - Weights: (verbs might be given more weight than nouns)
+    - Similar Words
+    """
 
     for x in sentences:
         count = 0
         sentence_words = nltk.word_tokenize(x)
         for y in sentence_words:
-            for k in question_words:
-                if y == k:
-                    count = count + 1
+            for k in pos:
+                word = k[0]
+                word_pos = k[1]
+                if y == word or stemmer.stem(y) == stemmer.stem(word) and y not in STOPWORDS:
+                #if y == word and y not in STOPWORDS:
+                    if word_pos == "VBP" or word_pos == "VB":
+                        count = count + 3
+                    elif word_pos == "NN" or word_pos == "NNP" or word_pos == "NNS":
+                        count = count + 2
+                    elif word_pos == "DT":
+                        count = count + 0
+                    else:
+                        count = count + 1
+
         best_sentences[x] = count
 
     return best_sentences
