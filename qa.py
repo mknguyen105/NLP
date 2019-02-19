@@ -122,7 +122,7 @@ def get_question_type(question):
     # How
 
 
-def get_locations(best_sentences, chunker)
+def get_locations(best_sentences, chunker):
 
 def get_answer(question, story):
     """
