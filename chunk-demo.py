@@ -29,7 +29,6 @@ def get_sentences(text):
     sentences = nltk.sent_tokenize(text)
     sentences = [nltk.word_tokenize(sent) for sent in sentences]
     sentences = [nltk.pos_tag(sent) for sent in sentences]
-    
     return sentences
 
 def pp_filter(subtree):

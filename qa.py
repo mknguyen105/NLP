@@ -3,6 +3,91 @@ from qa_engine.base import QABase
 from qa_engine.score_answers import main as score_answers
 import nltk, re
 
+GRAMMAR =   """
+            N: {<PRP>|<NN.*>}
+            V: {<V.*>}
+            ADJ: {<JJ.*>}
+            NP: {<DT>? <ADJ>* <N>+}
+            PP: {<IN> <NP>}
+            VP: {<TO>? <V> (<NP>|<PP>)*}
+            """
+LOC_PP = set(["in", "on", "at", "behind", "below", "beside", "above", "across", "along", "below", "between", "under",
+              "near", "inside"])
+
+
+# A better solution may be to use the dependency parse of the question deconstruct the subject direct obj etc..., and
+# then use a regex to find them in the text. So if subj is Crow and direct obj is branch, search for ^\..*(Crow.).*(branch)$
+
+# Naive solution for best sentences
+# Add lemmatizer
+# This function will return a list of tuples of sentences in the story that contain non-stopwords from the question
+# first elm is the sentence, second elm is number of overlapping words. Returns in desc sorted order of overlaps.
+def get_best_sentences(question, story):
+    story_text = story['text']
+    question_text = question['text']
+    question_words = nltk.word_tokenize(question_text)
+    sentences = nltk.sent_tokenize(story_text)
+    sentences = [nltk.word_tokenize(sent) for sent in sentences]
+    question_words = [word.lower() for word in question_words if word.lower() not in nltk.corpus.stopwords.words('english') and word.isalpha()]
+
+
+    # Iterate through each word of each sentence in the story, checking if words from the question are in the sentence
+    # If there is a match, add the sentence to best sentences, and join the words of the sentences before returning them
+    best_sentences = {}
+    ranked_sentences = []
+
+    for pattern in question_words:
+        for sent in sentences:
+            overlaps = re.findall(pattern, sent)
+            if len(overlaps) > 0:
+                if sent not in best_sentences:
+                    best_sentences[sent] = len(overlaps)
+                else:
+                    best_sentences[sent] += len(overlaps)
+
+    for sent in sentences:
+        for word in sent:
+            if word.lower() in question_words:
+                if ' '.join(sent) not in best_sentences:
+                    best_sentences[' '.join(sent)] = 1
+                else:
+                    best_sentences[' '.join(sent)] += 1
+    for (key, value) in best_sentences.items():
+        ranked_sentences.append((key, value))
+    ranked_sentences.sort(key=lambda x: x[1], reverse=True)
+    return best_sentences
+
+
+# Iterates through the constituency tree, checking for a given pattern of parts of speech, returning a subtree
+# containing it if found, else, returns none
+def pattern_matcher(pattern, tree):
+    for subtree in tree.subtrees():
+        node = matches(pattern, subtree)
+        if node is not None:
+            return node
+    return None
+
+
+def get_likely_answers(question, story):
+    tree = story["sch_par"][1]
+    question_type = get_question_type(question)
+
+    if question_type == 'where':
+        pattern = nltk.ParentedTree.fromstring("(VP (*) (PP))")
+
+    subtree = pattern_matcher(pattern, tree)
+    sub_sentence = get_tree_words(subtree)[1:]
+    answer = ' '.join(sub_sentence)
+    print(answer)
+
+def get_subj(text):
+    dep = text['dep']['nodes'][text['dep']['root']['deps']['nsubj']]
+    return
+
+
+def get_verb(text):
+    raise NotImplemented
+
 def get_tree_words(root):
     sent = []
     for node in root:
@@ -13,13 +98,19 @@ def get_tree_words(root):
     return sent
 
 
-# Lemmatizes word and lowercases. Then generates a regex pattern that matches the lemmatized word to other forms of the
-# word. So Shipping generates a pattern that will match ship, shipping, Shipping, ships, Ships, shiply and Shiply
-def get_word_pattern(word):
-    lmtzr = nltk.stem.WordNetLemmatizer()
-    word = lmtzr.lemmatize(word.lower())
-    pattern = '\b([' + word[0].upper() + word[0].lower() + ']' + word[1:] +'(ly|(' + word[-1:] + ')ing|s)?)\b'
-    return pattern
+def get_nsubj(dep, pos):
+    nsubjs = []
+    i = 0
+    dep_graph = dep['dep']
+    while dep_graph.contains_address(i):
+        if dep_graph._rel(i) == 'nsubj':
+            word = dep_graph.get_by_address(i)['word']
+            nsubjs.append(word)
+        i += 1
+
+    return nsubjs
+
+
 
 def matches(pattern, root):
     # Base cases to exit our recursion
@@ -81,73 +172,6 @@ def get_question_type(question):
     # How
 
 
-# A better solution may be to use the dependency parse of the question deconstruct the subject direct obj etc..., and
-# then use a regex to find them in the text. So if subj is Crow and direct obj is branch, search for ^\..*(Crow.).*(branch)$
-
-# Naive solution for best sentences
-# Add lemmatizer
-# This function will return a list of tuples of sentences in the story that contain non-stopwords from the question
-# first elm is the sentence, second elm is number of overlapping words. Returns in desc sorted order of overlaps.
-def get_best_sentences(question, story):
-    story_text = story['text']
-    question_text = question['text']
-    lmtzr = nltk.stem.WordNetLemmatizer()
-
-    question_words = nltk.word_tokenize(question_text)
-    sentences = nltk.sent_tokenize(story_text)
-    sentences = [nltk.word_tokenize(sent) for sent in sentences]
-    question_words = [get_word_pattern(word) for word in question_words if word.lower() not in nltk.corpus.stopwords.words('english') and word.isalpha()]
-
-
-    # Iterate through each word of each sentence in the story, checking if words from the question are in the sentence
-    # If there is a match, add the sentence to best sentences, and join the words of the sentences before returning them
-    best_sentences = {}
-    ranked_sentences = []
-
-    for pattern in question_words:
-        for sent in sentences:
-            overlaps = re.findall(pattern, sent)
-            if len(overlaps) > 0:
-                if sent not in best_sentences:
-                    best_sentences[sent] = len(overlaps)
-                else:
-                    best_sentences[sent] += len(overlaps)
-
-    for sent in sentences:
-        for word in sent:
-            if word.lower() in question_words:
-                if ' '.join(sent) not in best_sentences:
-                    best_sentences[' '.join(sent)] = 1
-                else:
-                    best_sentences[' '.join(sent)] += 1
-    for (key, value) in best_sentences.items():
-        ranked_sentences.append((key, value))
-    ranked_sentences.sort(key=lambda x: x[1], reverse=True)
-    return best_sentences
-
-
-# Iterates through the constituency tree, checking for a given pattern of parts of speech, returning a subtree
-# containing it if found, else, returns none
-def pattern_matcher(pattern, tree):
-    for subtree in tree.subtrees():
-        node = matches(pattern, subtree)
-        if node is not None:
-            return node
-    return None
-
-
-def get_likely_answers(question, story):
-    tree = story["sch_par"][1]
-    question_type = get_question_type(question)
-
-    if question_type == 'where':
-        pattern = nltk.ParentedTree.fromstring("(VP (*) (PP))")
-
-    subtree = pattern_matcher(pattern, tree)
-    sub_sentence = get_tree_words(subtree)[1:]
-    answer = ' '.join(sub_sentence)
-    print(answer)
-
 
 def get_answer(question, story):
     """
@@ -183,9 +207,23 @@ def get_answer(question, story):
 
     """
     ###     Your Code Goes Here         ###
-    sentences = get_best_sentences(question, story)
-    print(sentences)
+    chunker = nltk.RegexpParser(GRAMMAR)
+    subj = get_nsubj(question, 'nsubj')
+    verb = 'sitting'
+
+
+
+   # sentences = get_best_sentences(question, story)
+    #print(sentences)
+    if question['text'][0:4] == 'What':
+        tree = story["sch_par"][2]
+        pattern = nltk.ParentedTree.fromstring("(NP (*) (VP))")
+        subtree = pattern_matcher(pattern, tree)
+        sub_sentence = get_tree_words(subtree)[1:]
+        answer = ' '.join(sub_sentence)
+        print(answer)
     answer = "whatever you think the answer is"
+    print()
 
     ###     End of Your Code         ###
     return answer
