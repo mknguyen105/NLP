@@ -3,14 +3,17 @@ from qa_engine.base import QABase
 from qa_engine.score_answers import main as score_answers
 import nltk, re
 
+
 GRAMMAR =   """
             N: {<PRP>|<NN.*>}
             V: {<V.*>}
             ADJ: {<JJ.*>}
             NP: {<DT>? <ADJ>* <N>+}
-            PP: {<IN> <NP>}
+            PP: {<IN> <NP> <IN>? <NP>?}
             VP: {<TO>? <V> (<NP>|<PP>)*}
+            NNP: {<NNP>*} 
             """
+
 LOC_PP = set(["in", "on", "at", "behind", "below", "beside", "above", "across", "along", "below", "between", "under",
               "near", "inside"])
 
@@ -27,6 +30,9 @@ def get_sentences(text):
     return lower_sentences
 
 def get_best_sentences(patterns, sentences):
+    if ('story' or 'Story') in patterns:
+        return sentences
+
     raw_sentences = [" ".join([token[0] for token in sent]) for sent in sentences]
     result = []
     for sent, raw_sent in zip(sentences, raw_sentences):
@@ -37,13 +43,20 @@ def get_best_sentences(patterns, sentences):
             else:
                 matches += 1
         if matches > 0:
-            result.append((sent, matches))
+            result.append((sent, raw_sent, matches))
+
+
 
     # Sort list of best sentences in descending order from most overlaps to least
     result.sort(key=lambda x: x[1], reverse=True)
 
     # Create a list of results without the counts and return the list
-    results = [res for (res, count) in result]
+    result = [res for (res, raw, count) in result]
+
+    # If there are no matches, join all sentences and return that list
+    if len(result) == 0:
+        result = sentences
+
 
     return result
 
@@ -139,23 +152,35 @@ def get_question_type(question):
 # returns them as a list. The function iterates through each list, creates the chunks, and then finds all patterns
 # that correspond to that question. For example, if the question is a where question, this will search through the
 # chunks and add the ones that start with a PP
-def find_candidates(sentences, chunker, question_type):
+def chunk_find_candidates(sentences, chunker, question_type, subjects):
     candidates = []
 
+    nouns = []
+    verbs = []
     for sent in sentences:
         tree = chunker.parse(sent)
         # print(tree)
         if question_type == 'where':
-            locations = find_locations(tree)
-            candidates.extend(locations)
+            candidates.extend(find_locations(tree))
         elif question_type == 'what':
-            subjects = find_subjects(tree)
-            candidates.extend(subjects)
+            nouns = (find_nouns(tree))
+            for noun in nouns:
+                if noun not in candidates and noun not in subjects and noun not in nltk.corpus.stopwords.words('english'):
+                    candidates.append(noun)
+        elif question_type == 'who':
+            for word, tag in sent:
+                for subject in subjects:
+                    if subject == word and subject not in candidates:
+                        candidates.append(subject)
 
     return candidates
 
-def np_filter(subtree):
+
+def n_filter(subtree):
     return subtree.label() == "NP"
+
+def nnp_filter(subtree):
+    return subtree.label() == "NNP" or subtree.label() == "NNPS" or "NP"
 
 def pp_filter(subtree):
     return subtree.label() == "PP"
@@ -164,6 +189,19 @@ def pp_filter(subtree):
 def is_location(prep):
     return prep[0] in LOC_PP
 
+def find_subjects(dep):
+    subjects = []
+    i = 0
+    for sentence in dep:
+        dep_graph = sentence
+        while dep_graph.contains_address(i):
+            if dep_graph._rel(i) == 'nsubj':
+                word = dep_graph.get_by_address(i)['word']
+                if word not in subjects:
+                    subjects.append(word.lower())
+            i += 1
+
+    return subjects
 
 def find_locations(tree):
     # Starting at the root of the tree
@@ -186,13 +224,13 @@ def find_locations(tree):
         results.append(' '.join(get_tree_words(locations[0])))
     return results
 
-def find_subjects(tree):
-    subjects = []
+def find_nouns(tree):
+    nouns = []
     results = []
-    for subtree in tree.subtrees(filter=np_filter):
-        subjects.append(subtree)
+    for subtree in tree.subtrees(filter=n_filter):
+        nouns.append(subtree)
 
-    results.append(get_tree_words(subjects[0]))
+    results.extend(get_tree_words(nouns[0]))
     return results
 
 def get_tree_words(root):
@@ -203,6 +241,7 @@ def get_tree_words(root):
         elif type(node) == tuple:
             sent.append(node[0])
     return sent
+
 
 def get_answer(question, story):
     """
@@ -252,14 +291,16 @@ def get_answer(question, story):
     # Setup a chunker to be used later to find parts of the sentence that may contain the answer
     chunker = nltk.RegexpParser(GRAMMAR)
 
-    # Get the question type. Returns a string of 'who', 'what', 'where', etc...
-    question_type = get_question_type(question)
+    question_type = get_question_type(question)    # Get the question type. Returns a string of 'who', 'what', 'where', etc...
 
     # Get the verb and subject of the question and put them into the list 'patterns'. Ex:['crow', fox, 'sit']
     nouns = get_nouns(question)
     verb = get_verb(question)
     patterns = [noun for noun in nouns]
     patterns.append(verb)
+
+    # Get subjects of story
+    story_subjects = find_subjects(dep)
 
     # A list of tokenized and tagged sentences from the story. Format is [[(word1, tag1), (word2, tag2),...],[word1,..]]
     sentences = get_sentences(text)
@@ -268,13 +309,13 @@ def get_answer(question, story):
     best_sentences = get_best_sentences(patterns, sentences)
 
     # Go through the best sentences and find parts of the sentences that relate to the question type
-    if len(best_sentences) > 0:
-        candidates = find_candidates(best_sentences, chunker, question_type)
+    candidates = chunk_find_candidates(best_sentences, chunker, question_type, story_subjects)
 
-    # Just return the first result for now
-        answer = candidates
-    else:
-        answer = ''
+     #Just return the first result for now
+    answer = ' '.join(candidates)
+    #else:
+   # answer = [word for subsent in best_sentences for (word, tag) in subsent]
+   # answer = ' '.join(answer)
 
 
     ###     End of Your Code         ###
