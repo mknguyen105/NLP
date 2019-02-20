@@ -1,7 +1,158 @@
-
 from qa_engine.base import QABase
 from qa_engine.score_answers import main as score_answers
+import nltk, re, operator
+import baseline
 
+stopwords = set(nltk.corpus.stopwords.words("english"))
+
+GRAMMAR =   """
+            N: {<PRP>|<NN.*>}
+            V: {<V.*>}
+            ADJ: {<JJ.*>}
+            NP: {<DT>? <ADJ>* <N>+}
+            PP: {<IN> <NP>}
+            VP: {<TO>? <V> (<NP>|<PP>)*}
+            """
+LOC_PP = set(["in", "on", "at", "behind", "below", "beside", "above", "across", "along", "below", "between", "under",
+              "near", "inside"])
+
+def get_sentences(text):
+    sentences = nltk.sent_tokenize(text)
+    sentences = [nltk.word_tokenize(sent) for sent in sentences]
+    sentences = [nltk.pos_tag(sent) for sent in sentences]
+    return sentences
+
+
+'''
+def get_best_sentences(patterns, sentences):
+    raw_sentences = [" ".join([token[0] for token in sent]) for sent in sentences]
+    result = []
+    for sent, raw_sent in zip(sentences, raw_sentences):
+        for pattern in patterns:
+            if not re.search(pattern, raw_sent):
+                matches = False
+            else:
+                matches = True
+        if matches:
+            result.append(sent)
+
+        return result
+'''
+
+def get_best_sentences(question, story):
+    qtext = get_sentences(question['text'])
+    qbow = baseline.get_bow(qtext[0], stopwords)
+    stext = get_sentences(story['text'])
+
+    answers = []
+
+    print(qbow)
+
+    for sent in stext:
+        # A list of all the word tokens in the sentence
+        sbow = baseline.get_bow(sent, stopwords)
+        
+        # Count the # of overlapping words between the Q and the A
+        # & is the set intersection operator
+        overlap = len(qbow & sbow)
+
+        answers.append((overlap, sent))
+
+    answers = sorted(answers, key=operator.itemgetter(0), reverse=True)
+    best_answer_tup = (answers[0])[1]    
+
+    sent = ' '.join([word for (word, tuple) in best_answer_tup])
+    print(best_answer_tup)
+    return sent
+
+def get_verb(dep):
+    i = 0
+    verb = None
+    dep_graph = dep['dep']
+    while dep_graph.contains_address(i):
+        if dep_graph._rel(i) == 'root':
+            verb = dep_graph.get_by_address(i)['word']
+        i += 1
+    lmtzr = nltk.WordNetLemmatizer()
+    verb = lmtzr.lemmatize(verb, 'v')
+    return verb
+
+
+def get_nsubj(dep):
+    nsubjs = []
+    i = 0
+    dep_graph = dep['dep']
+    while dep_graph.contains_address(i):
+        if dep_graph._rel(i) == 'nsubj':
+            word = dep_graph.get_by_address(i)['word']
+            nsubjs.append(word)
+        i += 1
+
+    return nsubjs
+
+
+
+def matches(pattern, root):
+    # Base cases to exit our recursion
+    # If both nodes are null we've matched everything so far
+    if root is None and pattern is None:
+        return root
+
+    # We've matched everything in the pattern we're supposed to (we can ignore the extra
+    # nodes in the main tree for now)
+    elif pattern is None:
+        return root
+
+    # We still have something in our pattern, but there's nothing to match in the tree
+    elif root is None:
+        return None
+
+    # A node in a tree can either be a string (if it is a leaf) or node
+    plabel = pattern if isinstance(pattern, str) else pattern.label()
+    rlabel = root if isinstance(root, str) else root.label()
+
+    # If our pattern label is the * then match no matter what
+    if plabel == "*":
+        return root
+    # Otherwise they labels need to match
+    elif plabel == rlabel:
+        # If there is a match we need to check that all the children match
+        # Minor bug (what happens if the pattern has more children than the tree)
+        for pchild, rchild in zip(pattern, root):
+            match = matches(pchild, rchild)
+            if match is None:
+                return None
+        return root
+
+    return None
+
+# This returns who what when where why or how
+# I know for this assignment we could probably just use the first word and exclude the funtion, but I figure this will
+# keep us organized if we're later thrown questions that don't have the question word as the first word, or if there is
+# no question word in the question at all
+def get_question_type(question):
+    question_types = ['who', 'what', 'when', 'where', 'why']
+
+    words = nltk.word_tokenize(question['text'])
+    first_word = words[0].lower()
+    if first_word in question_types:
+        return first_word
+
+# Add other methods of detecting question type to cover it not being first word
+    # Who
+
+    # What
+
+    # When
+
+    # Where
+
+    # Why
+
+    # How
+
+
+# def get_locations(best_sentences, chunker):
 
 def get_answer(question, story):
     """
@@ -37,25 +188,20 @@ def get_answer(question, story):
 
     """
     ###     Your Code Goes Here         ###
-    for q in question:
-        print (q)
-
-    answer = "whatever you think the answer is"
-
+    '''
+    chunker = nltk.RegexpParser(GRAMMAR)
+    subj = get_nsubj(question)
+    verb = get_verb(question)
+    patterns = subj.extend(verb)
+    sentences = get_sentences(story['text'])
+    best_sentences = get_best_sentences([subj[0], verb], sentences)
+    locations = get_locations(best_sentences, chunker)
+    '''
+    answer = get_best_sentences(question, story)
 
 
     ###     End of Your Code         ###
     return answer
-
-def get_best_sentences(question, story):
-
-    #Function to break apart question
-
-    #get_sentence question
-    #get sentence subject
-    #get_sentence verb
-
-    return sentences
 
 
 
