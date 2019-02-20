@@ -17,6 +17,7 @@ LOC_PP = set(["in", "on", "at", "behind", "below", "beside", "above", "across", 
 def get_sentences(text):
     sentences = nltk.sent_tokenize(text)
     sentences = [nltk.word_tokenize(sent) for sent in sentences]
+    sentences = [word.lower() for subsent in sentences for word in subsent]
     sentences = [nltk.pos_tag(sent) for sent in sentences]
     return sentences
 
@@ -48,17 +49,17 @@ def get_verb(dep):
     return verb
 
 
-def get_nsubj(dep):
-    nsubjs = []
+def get_nouns(dep):
+    nouns = []
     i = 0
     dep_graph = dep['dep']
     while dep_graph.contains_address(i):
-        if dep_graph._rel(i) == 'nsubj':
+        if dep_graph._rel(i) == 'nsubj' or dep_graph._rel(i) == 'nmod':
             word = dep_graph.get_by_address(i)['word']
-            nsubjs.append(word)
+            nouns.append(word)
         i += 1
 
-    return nsubjs
+    return nouns
 
 
 
@@ -122,7 +123,74 @@ def get_question_type(question):
     # How
 
 
-def get_locations(best_sentences, chunker):
+# This function goes through all sentences given to it, and finds chunks that correspond to the question type and
+# returns them as a list. The function iterates through each list, creates the chunks, and then finds all patterns
+# that correspond to that question. For example, if the question is a where question, this will search through the
+# chunks and add the ones that start with a PP
+def find_candidates(sentences, chunker, question_type):
+    candidates = []
+
+    for sent in sentences:
+        tree = chunker.parse(sent)
+        # print(tree)
+        if question_type == 'where':
+            locations = find_locations(tree)
+            candidates.extend(locations)
+        elif question_type == 'what':
+            subjects = find_subjects(tree)
+            candidates.extend(subjects)
+
+    return candidates
+
+def np_filter(subtree):
+    return subtree.label() == "NP"
+
+def pp_filter(subtree):
+    return subtree.label() == "PP"
+
+
+def is_location(prep):
+    return prep[0] in LOC_PP
+
+
+def find_locations(tree):
+    # Starting at the root of the tree
+    # Traverse each node and get the subtree underneath it
+    # Filter out any subtrees who's label is not a PP
+    # Then check to see if the first child (it must be a preposition) is in
+    # our set of locative markers
+    # If it is then add it to our list of candidate locations
+
+    # How do we modify this to return only the NP: add [1] to subtree!
+    # How can we make this function more robust?
+    # Make sure the crow/subj is to the left
+    locations = []
+    results = []
+    for subtree in tree.subtrees(filter=pp_filter):
+        if is_location(subtree[0]):
+            locations.append(subtree)
+
+    if len(locations) > 0:
+        results.append(' '.join(get_tree_words(locations[0])))
+    return results
+
+def find_subjects(tree):
+    subjects = []
+    results = []
+    for subtree in tree.subtrees(filter=np_filter):
+        subjects.append(subtree)
+
+    results.append(get_tree_words(subjects[0]))
+    return results
+
+def get_tree_words(root):
+    sent = []
+    for node in root:
+        if type(node) == nltk.Tree:
+            sent += get_tree_words(node)
+        elif type(node) == tuple:
+            sent.append(node[0])
+    return sent
 
 def get_answer(question, story):
     """
@@ -158,20 +226,31 @@ def get_answer(question, story):
 
     """
     ###     Your Code Goes Here         ###
+
+    # Setup a chunker to be used later to find parts of the sentence that may contain the answer
     chunker = nltk.RegexpParser(GRAMMAR)
-    subj = get_nsubj(question)
+
+    # Get the question type. Returns a string of 'who', 'what', 'where', etc...
+    question_type = get_question_type(question)
+
+    # Get the verb and subject of the question and put them into the list 'patterns'. Ex:['crow', fox, 'sit']
+    nouns = get_nouns(question)
     verb = get_verb(question)
-    patterns = subj.extend(verb)
+    patterns = [noun for noun in nouns]
+    patterns.append(verb)
+
+    # A list of tokenized and tagged sentences from the story. Format is [[(word1, tag1), (word2, tag2),...],[word1,..]]
     sentences = get_sentences(story['text'])
-    best_sentences = get_best_sentences([subj[0], verb], sentences)
-    locations = get_locations(best_sentences, chunker)
 
+    # Get the best sentences, found by scoring words in sentences that overlap with the subj and verb in the question
+    best_sentences = get_best_sentences(patterns, sentences)
 
+    # Go through the best sentences and find parts of the sentences that relate to the question type
+    candidates = find_candidates(best_sentences, chunker, question_type)
 
+    # Just return the first result for now
+    answer = candidates
 
-
-    answer = "whatever you think the answer is"
-    print()
 
     ###     End of Your Code         ###
     return answer
