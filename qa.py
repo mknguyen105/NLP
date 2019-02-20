@@ -314,25 +314,25 @@ def get_answer(question, story):
         best_sentence2 = (best_sentences[1])[1]
         tokenized_sent2 = ' '.join([word for (word, tuple) in best_sentence2])
 
-        tokenized_sent += tokenized_sent2
+        tokenized_sent += ' ' + tokenized_sent2
 
         if len(best_sentences) > 2:
             best_sentence3 = (best_sentences[2])[1]
             tokenized_sent3 = ' '.join([word for (word, tuple) in best_sentence3])
 
-            tokenized_sent += tokenized_sent3
+            tokenized_sent += ' ' + tokenized_sent3
 
             if len(best_sentences) > 3:
                 best_sentence4 = (best_sentences[3])[1]
                 tokenized_sent4 = ' '.join([word for (word, tuple) in best_sentence4])
 
-                tokenized_sent += tokenized_sent4
+                tokenized_sent += ' ' + tokenized_sent4
 
                 if len(best_sentences) > 4:
                     best_sentence5 = (best_sentences[4])[1]
                     tokenized_sent5 = ' '.join([word for (word, tuple) in best_sentence5])
 
-                    tokenized_sent += tokenized_sent5
+                    tokenized_sent += ' ' + tokenized_sent5
 
 
     # print(best_sentences[0])
