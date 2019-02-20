@@ -2,8 +2,11 @@ from qa_engine.base import QABase
 from qa_engine.score_answers import main as score_answers
 import nltk, re, operator
 import baseline
+from nltk.stem.wordnet import WordNetLemmatizer
+from nltk.stem.snowball import SnowballStemmer
 
-stopwords = set(nltk.corpus.stopwords.words("english"))
+
+STOPWORDS = set(nltk.corpus.stopwords.words("english"))
 
 GRAMMAR =   """
             N: {<PRP>|<NN.*>}
@@ -40,30 +43,127 @@ def get_best_sentences(patterns, sentences):
 '''
 
 def get_best_sentences(question, story):
+    """
+       Answer Identification
+       - Basic Word Overlap:
+       - Stop Words:
+       - Roots:
+       - Weights: (verbs might be given more weight than nouns)
+       - Similar Words
+
+       Pipeline:
+       Get subj and verb from question
+       Get Question Type
+       Search through sentences and return sentences that have the subject
+
+       """
+
+    best_sentences = []
+    chunker = nltk.RegexpParser(GRAMMAR)
+    lmtzr = WordNetLemmatizer()
+    stemmer = SnowballStemmer("english")
+
+    if question['type'] == "Story":
+        sentences = get_sentences(story['text'])
+    else:  # sch | (story | sch)
+        sentences = get_sentences(story['sch'])
+
+
+    question_text = question['text']
+    question_words = nltk.word_tokenize(str(question_text))
+
+    q_type = get_question_type(question)
+
+    nsubj = get_nsubj(question)
+    verb = get_verb(question)
+
+    print(question_text)
+    print(nsubj)
+    print(verb)
+
+    #Classify question type
+    verb_count = 0
+    noun_count = 0
+
+    if q_type == "what":
+        verb_count = 2
+        noun_count = 2
+    elif q_type == "where":
+        #Look for prepositional noun
+        verb_count = 2
+        noun_count = 3
+    elif q_type == "who":
+        #Look for person
+        verb_count = 2
+        noun_count = 3
+
+
+    for sent in sentences:
+        count = 0
+        for word in sent:
+            token = word[0]
+            pos = word[1]
+            for qword in question_words:
+                if stemmer.stem(qword) == stemmer.stem(token) and token not in STOPWORDS:
+                #if stemmer.stem(qword) == stemmer.stem(token):
+                    if pos == "VBP" or pos == "VB":
+                        count = count + verb_count
+                    elif pos == "NN" or pos == "NNP" or pos == "NNS":
+                        count = count + noun_count
+                    else:
+                        count = count + 1
+
+        # tokenized_sentence = ' '.join([word for (word,tag) in sent])
+        # print(tokenized_sentence + " " + str(count))
+        best_sentences.append((count, sent))
+        # best_sentences = sorted(best_sentences, key=operator.itemgetter(0), reverse=True)
+        # best_sentence = (best_sentences[0])[1]    
+
+    return best_sentences
+
+def get_best_sentences_bow(question, story):
     qtext = get_sentences(question['text'])
-    qbow = baseline.get_bow(qtext[0], stopwords)
-    stext = get_sentences(story['text'])
+    qbow = baseline.get_bow(qtext[0], STOPWORDS)
+    # stext = get_sentences(story['text'])
 
-    answers = []
+    if question['type'] == "Story":
+        sentences = get_sentences(story['text'])
+    else:  # sch | (story | sch)
+        sentences = get_sentences(story['sch'])
 
-    print(qbow)
+    best_sentences = []
 
-    for sent in stext:
+    # print(qbow)
+
+    for sent in sentences:
         # A list of all the word tokens in the sentence
-        sbow = baseline.get_bow(sent, stopwords)
+        sbow = baseline.get_bow(sent, STOPWORDS)
         
+        # print(sbow)
         # Count the # of overlapping words between the Q and the A
         # & is the set intersection operator
         overlap = len(qbow & sbow)
 
-        answers.append((overlap, sent))
+        '''
+        if overlap == 0:
+            print('no overlap')
+            # best_sents = get_best_sentences(question, story)
+            # best_sentences.extend(best_sents)
 
-    answers = sorted(answers, key=operator.itemgetter(0), reverse=True)
-    best_answer_tup = (answers[0])[1]    
+        else:
+        '''
+        if overlap > 0:
+            best_sentences.append((overlap, sent))
 
-    sent = ' '.join([word for (word, tuple) in best_answer_tup])
-    print(best_answer_tup)
-    return sent
+    if len(best_sentences) == 0:
+        best_sentences = get_best_sentences(question, story)
+
+    best_sentences = sorted(best_sentences, key=operator.itemgetter(0), reverse=True)
+    # best_sentence = (answers[0])[1]    
+
+    # tokenized_sent = ' '.join([word for (word, tuple) in best_sentence])
+    # print((best_sentences[0])[1])
+    return best_sentences
 
 def get_verb(dep):
     i = 0
@@ -86,11 +186,12 @@ def get_nsubj(dep):
         if dep_graph._rel(i) == 'nsubj':
             word = dep_graph.get_by_address(i)['word']
             nsubjs.append(word)
+        if dep_graph._rel(i) == 'nmod':
+            word = dep_graph.get_by_address(i)['word']
+            nsubjs.append(word)
         i += 1
 
     return nsubjs
-
-
 
 def matches(pattern, root):
     # Base cases to exit our recursion
@@ -197,8 +298,40 @@ def get_answer(question, story):
     best_sentences = get_best_sentences([subj[0], verb], sentences)
     locations = get_locations(best_sentences, chunker)
     '''
-    answer = get_best_sentences(question, story)
+    # print(question['text'])
 
+    best_sentences = get_best_sentences_bow(question, story)
+    best_sentence = (best_sentences[0])[1]
+    tokenized_sent = ' '.join([word for (word, tuple) in best_sentence])
+
+    if len(best_sentences) > 1:
+        best_sentence2 = (best_sentences[1])[1]
+        tokenized_sent2 = ' '.join([word for (word, tuple) in best_sentence2])
+
+        tokenized_sent += tokenized_sent2
+
+        if len(best_sentences) > 2:
+            best_sentence3 = (best_sentences[2])[1]
+            tokenized_sent3 = ' '.join([word for (word, tuple) in best_sentence3])
+
+            tokenized_sent += tokenized_sent3
+
+            if len(best_sentences) > 3:
+                best_sentence4 = (best_sentences[3])[1]
+                tokenized_sent4 = ' '.join([word for (word, tuple) in best_sentence4])
+
+                tokenized_sent += tokenized_sent4
+
+                if len(best_sentences) > 4:
+                    best_sentence5 = (best_sentences[4])[1]
+                    tokenized_sent5 = ' '.join([word for (word, tuple) in best_sentence5])
+
+                    tokenized_sent += tokenized_sent5
+
+
+    # print(best_sentences[0])
+
+    answer = tokenized_sent
 
     ###     End of Your Code         ###
     return answer
