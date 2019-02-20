@@ -15,25 +15,37 @@ LOC_PP = set(["in", "on", "at", "behind", "below", "beside", "above", "across", 
               "near", "inside"])
 
 def get_sentences(text):
+    lower_sentences = []
     sentences = nltk.sent_tokenize(text)
     sentences = [nltk.word_tokenize(sent) for sent in sentences]
-    sentences = [word.lower() for subsent in sentences for word in subsent]
-    sentences = [nltk.pos_tag(sent) for sent in sentences]
-    return sentences
+    for sent in sentences:
+        lower_sentence = []
+        for word in sent:
+            lower_sentence.append(word.lower())
+        lower_sentences.append(lower_sentence)
+    lower_sentences = [nltk.pos_tag(sent) for sent in lower_sentences]
+    return lower_sentences
 
 def get_best_sentences(patterns, sentences):
     raw_sentences = [" ".join([token[0] for token in sent]) for sent in sentences]
     result = []
     for sent, raw_sent in zip(sentences, raw_sentences):
+        matches = 0
         for pattern in patterns:
             if not re.search(pattern, raw_sent):
-                matches = False
+                continue
             else:
-                matches = True
-        if matches:
-            result.append(sent)
+                matches += 1
+        if matches > 0:
+            result.append((sent, matches))
 
-        return result
+    # Sort list of best sentences in descending order from most overlaps to least
+    result.sort(key=lambda x: x[1], reverse=True)
+
+    # Create a list of results without the counts and return the list
+    results = [res for (res, count) in result]
+
+    return result
 
 
 def get_verb(dep):
@@ -227,6 +239,16 @@ def get_answer(question, story):
     """
     ###     Your Code Goes Here         ###
 
+    # Determine where we will find the answer
+    if question['type'] == 'Sch':
+        text = story['sch']
+        dep = story['sch_dep']
+        par = story['sch_par']
+    else:
+        text = story['text']
+        dep = story['story_dep']
+        par = story['story_par']
+
     # Setup a chunker to be used later to find parts of the sentence that may contain the answer
     chunker = nltk.RegexpParser(GRAMMAR)
 
@@ -240,16 +262,19 @@ def get_answer(question, story):
     patterns.append(verb)
 
     # A list of tokenized and tagged sentences from the story. Format is [[(word1, tag1), (word2, tag2),...],[word1,..]]
-    sentences = get_sentences(story['text'])
+    sentences = get_sentences(text)
 
     # Get the best sentences, found by scoring words in sentences that overlap with the subj and verb in the question
     best_sentences = get_best_sentences(patterns, sentences)
 
     # Go through the best sentences and find parts of the sentences that relate to the question type
-    candidates = find_candidates(best_sentences, chunker, question_type)
+    if len(best_sentences) > 0:
+        candidates = find_candidates(best_sentences, chunker, question_type)
 
     # Just return the first result for now
-    answer = candidates
+        answer = candidates
+    else:
+        answer = ''
 
 
     ###     End of Your Code         ###
