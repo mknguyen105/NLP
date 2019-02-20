@@ -3,6 +3,7 @@ from qa_engine.base import QABase
 from qa_engine.score_answers import main as score_answers
 from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.stem.snowball import SnowballStemmer
+from nltk.corpus import wordnet as wn
 
 import nltk
 STOPWORDS = nltk.corpus.stopwords.words('english')
@@ -48,6 +49,7 @@ def get_best_sentences(question, story):
     chunker = nltk.RegexpParser(GRAMMAR)
     lmtzr = WordNetLemmatizer()
     stemmer = SnowballStemmer("english")
+    story_subjects = get_story_subjects(story['dep'])
 
     if question['type'] == "Story":
         sentences = get_sentences(story['text'])
@@ -65,26 +67,35 @@ def get_best_sentences(question, story):
     #Classify question type
     verb_count = 0
     noun_count = 0
-
+    keywords = []
     if type == "what":
-        verb_count = 2
+        verb_count = 3
         noun_count = 2
     elif type == "where":
         #Look for prepositional noun
+        keywords = ["in", "on", "at", "behind", "below", "beside", "above", "across", "along", "below", "between", "under",
+              "near", "inside"]
+        key_count = 1
         verb_count = 2
-        noun_count = 3
+        noun_count = 2
     elif type == "who":
         #Look for person
         verb_count = 2
         noun_count = 3
+    elif type == "why":
+        key_count = 1
+        keywords = ['because', 'so that', 'in order to']
 
 
     for sent in sentences:
         count = 0
-        for word in sent:
-            token = word[0]
-            pos = word[1]
+        for token, pos in sent:
+            if token.lower() in keywords:
+                count = count + key_count
             for qword in question_words:
+                if pos == "VBP" or pos == "VB":
+                   # count += get_verb_similarity(qword, token)
+                    pass
                 if stemmer.stem(qword) == stemmer.stem(token) and token not in STOPWORDS:
                 #if stemmer.stem(qword) == stemmer.stem(token):
                     if pos == "VBP" or pos == "VB":
@@ -204,6 +215,22 @@ def get_question_type(question):
 
 def get_locations(best_sentences, chunker):
     print("Get locations")
+
+def get_verb_similarity(verb1, verb2):
+    score = 0
+    try:
+        word1 = wn.synsets(verb1, pos='v')
+        word2 = wn.synsets(verb2, pos='v')
+        for syn1 in word1:
+            for syn2 in word2:
+                if syn1.path_similarity(syn2) == 1:
+                    return 1
+                elif syn1.path_similarity(syn2) > 5:
+                    score = 0
+    except:
+        return 0
+
+    return score
 
 def get_answer(question, story):
     """
