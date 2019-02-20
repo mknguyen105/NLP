@@ -14,6 +14,23 @@ GRAMMAR =   """
             NNP: {<NNP>*} 
             """
 
+WHERE_GRAMMAR =   """
+            LOC: {<TO> <DT>? (<NP>|<N>)}
+            PP: {<IN> <NP> <IN>? <NP>?}
+            VP: {<TO>? <V> (<NP>|<PP>)*}
+            NNP: {<NNP>*} 
+            """
+
+WHAT_GRAMMAR =   """
+            N: {<PRP>|<NN.*>}
+            V: {<V.*>}
+            ADJ: {<JJ.*>}
+            NP: {<DT>? <ADJ>* <N>+}
+            VP: {<TO>? <V> (<NP>|<PP>)*}
+            NNP: {<NNP>*} 
+            """
+
+
 LOC_PP = set(["in", "on", "at", "behind", "below", "beside", "above", "across", "along", "below", "between", "under",
               "near", "inside"])
 
@@ -295,9 +312,10 @@ def get_answer(question, story):
         par = story['story_par']
 
     # Setup a chunker to be used later to find parts of the sentence that may contain the answer
-    chunker = nltk.RegexpParser(GRAMMAR)
 
     question_type = get_question_type(question)    # Get the question type. Returns a string of 'who', 'what', 'where', etc...
+    chunker = nltk.RegexpParser(GRAMMAR)
+
 
     # Get the verb and subject of the question and put them into the list 'patterns'. Ex:['crow', fox, 'sit']
     nouns = get_nouns(question)

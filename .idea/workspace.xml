@@ -4,7 +4,6 @@
     <list default="true" id="9a16f10d-849a-48ed-a7ea-641973c98c41" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/qa.py" beforeDir="false" afterPath="$PROJECT_DIR$/qa.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/qa_engine/score_answers.py" beforeDir="false" afterPath="$PROJECT_DIR$/qa_engine/score_answers.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -39,14 +38,14 @@
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
           <entry key="Python Console" value="138" />
-          <entry key="py" value="5435" />
-          <entry key="txt" value="196" />
+          <entry key="py" value="5682" />
+          <entry key="txt" value="264" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="PLAIN_TEXT" value="196" />
-          <entry key="Python" value="5573" />
+          <entry key="PLAIN_TEXT" value="264" />
+          <entry key="Python" value="5820" />
         </counts>
       </usages-collector>
     </session>
@@ -68,14 +67,13 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/qa.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="608">
-              <caret line="323" column="4" selection-start-line="323" selection-start-column="4" selection-end-line="323" selection-end-column="4" />
+            <state relative-caret-position="-1305">
+              <caret line="52" column="39" selection-start-line="52" selection-start-column="39" selection-end-line="52" selection-end-column="39" />
               <folding>
                 <element signature="e#1#34#0" expanded="true" />
                 <element signature="e#507#907#0" />
                 <element signature="e#3829#4032#0" />
                 <element signature="e#4034#4113#0" />
-                <element signature="e#5243#5298#0" />
                 <element signature="e#5490#5556#0" />
                 <element signature="e#5093#5123#0" />
                 <element signature="e#5153#5177#0" />
@@ -362,7 +360,14 @@
       <option name="project" value="LOCAL" />
       <updated>1550642584972</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="95% recall with low precision.">
+      <created>1550663345876</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1550663345876</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -415,7 +420,8 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Slightly updated qa. Need to redo get_best_sentences to use regex instead of direct comparison so that lemmatizer will work properly." />
     <MESSAGE value="Updated get best sentences regex version." />
-    <option name="LAST_COMMIT_MESSAGE" value="Updated get best sentences regex version." />
+    <MESSAGE value="95% recall with low precision." />
+    <option name="LAST_COMMIT_MESSAGE" value="95% recall with low precision." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -447,8 +453,8 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/qa.py</url>
-          <line>173</line>
-          <option name="timeStamp" value="150" />
+          <line>336</line>
+          <option name="timeStamp" value="154" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
@@ -539,14 +545,13 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/qa.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="608">
-          <caret line="323" column="4" selection-start-line="323" selection-start-column="4" selection-end-line="323" selection-end-column="4" />
+        <state relative-caret-position="-1305">
+          <caret line="52" column="39" selection-start-line="52" selection-start-column="39" selection-end-line="52" selection-end-column="39" />
           <folding>
             <element signature="e#1#34#0" expanded="true" />
             <element signature="e#507#907#0" />
             <element signature="e#3829#4032#0" />
             <element signature="e#4034#4113#0" />
-            <element signature="e#5243#5298#0" />
             <element signature="e#5490#5556#0" />
             <element signature="e#5093#5123#0" />
             <element signature="e#5153#5177#0" />
