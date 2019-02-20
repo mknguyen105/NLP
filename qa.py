@@ -20,10 +20,16 @@ LOC_PP = set(["in", "on", "at", "behind", "below", "beside", "above", "across", 
               "near", "inside"])
 
 def get_sentences(text):
+    lower_sentences = []
     sentences = nltk.sent_tokenize(text)
     sentences = [nltk.word_tokenize(sent) for sent in sentences]
-    sentences = [nltk.pos_tag(sent) for sent in sentences]
-    return sentences
+    for sent in sentences:
+        lower_sentence = []
+        for word in sent:
+            lower_sentence.append(word.lower())
+        lower_sentences.append(lower_sentence)
+    lower_sentences = [nltk.pos_tag(sent) for sent in lower_sentences]
+    return lower_sentences
 
 
 '''
