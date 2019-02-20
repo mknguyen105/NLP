@@ -30,8 +30,6 @@ def get_sentences(text):
     return lower_sentences
 
 def get_best_sentences(patterns, sentences):
-    if ('story' or 'Story') in patterns:
-        return sentences
 
     raw_sentences = [" ".join([token[0] for token in sent]) for sent in sentences]
     result = []
@@ -53,7 +51,7 @@ def get_best_sentences(patterns, sentences):
     # Create a list of results without the counts and return the list
     result = [res for (res, raw, count) in result]
 
-    # If there are no matches, join all sentences and return that list
+    # If there are no matches, return all sentences
     if len(result) == 0:
         result = sentences
 
@@ -242,6 +240,14 @@ def get_tree_words(root):
             sent.append(node[0])
     return sent
 
+def get_question_patterns(question_type):
+    patterns = []
+    if question_type == 'why':
+        patterns.extend(['because', 'so that', 'to', 'in order to', 'so'])
+    if question_type == 'where':
+        patterns.extend(["in", "on", "at", "behind", "below", "beside", "above", "across", "along", "below", "between", "under",
+              "near", "inside"])
+    return patterns
 
 def get_answer(question, story):
     """
@@ -301,6 +307,7 @@ def get_answer(question, story):
 
     # Get subjects of story
     story_subjects = find_subjects(dep)
+    patterns.extend(get_question_patterns(question_type))
 
     # A list of tokenized and tagged sentences from the story. Format is [[(word1, tag1), (word2, tag2),...],[word1,..]]
     sentences = get_sentences(text)
@@ -313,12 +320,13 @@ def get_answer(question, story):
 
      #Just return the first result for now
     answer = ' '.join(candidates)
-    #else:
-   # answer = [word for subsent in best_sentences for (word, tag) in subsent]
-   # answer = ' '.join(answer)
 
+    answer = [word for subsent in best_sentences for (word, tag) in subsent]
+    #answer = [word for word, tag in best_sentences[0]]
+    answer = ' '.join(answer)
 
     ###     End of Your Code         ###
+
     return answer
 
 

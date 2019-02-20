@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="9a16f10d-849a-48ed-a7ea-641973c98c41" name="Default Changelist" comment="" />
+    <list default="true" id="9a16f10d-849a-48ed-a7ea-641973c98c41" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/qa.py" beforeDir="false" afterPath="$PROJECT_DIR$/qa.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/qa_engine/score_answers.py" beforeDir="false" afterPath="$PROJECT_DIR$/qa_engine/score_answers.py" afterDir="false" />
+    </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -21,37 +25,39 @@
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
-          <entry key="py" value="9" />
-          <entry key="tsv" value="2" />
+          <entry key="py" value="13" />
+          <entry key="tsv" value="3" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
           <entry key="PLAIN_TEXT" value="2" />
-          <entry key="Python" value="9" />
+          <entry key="Python" value="13" />
+          <entry key="TSV" value="1" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
-          <entry key="py" value="2281" />
+          <entry key="Python Console" value="138" />
+          <entry key="py" value="5435" />
           <entry key="txt" value="196" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
           <entry key="PLAIN_TEXT" value="196" />
-          <entry key="Python" value="2281" />
+          <entry key="Python" value="5573" />
         </counts>
       </usages-collector>
     </session>
   </component>
   <component name="FileEditorManager">
-    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+    <leaf>
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/constituency-demo-stub.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1537">
-              <caret line="53" column="42" selection-start-line="53" selection-start-column="42" selection-end-line="53" selection-end-column="42" />
+            <state relative-caret-position="845">
+              <caret line="59" selection-start-line="59" selection-end-line="59" />
               <folding>
                 <element signature="e#24#40#0" expanded="true" />
               </folding>
@@ -62,20 +68,49 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/qa.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="700">
-              <caret line="88" column="86" lean-forward="true" selection-start-line="88" selection-start-column="86" selection-end-line="88" selection-end-column="86" />
+            <state relative-caret-position="608">
+              <caret line="323" column="4" selection-start-line="323" selection-start-column="4" selection-end-line="323" selection-end-column="4" />
               <folding>
                 <element signature="e#1#34#0" expanded="true" />
+                <element signature="e#507#907#0" />
+                <element signature="e#3829#4032#0" />
+                <element signature="e#4034#4113#0" />
+                <element signature="e#5243#5298#0" />
+                <element signature="e#5490#5556#0" />
+                <element signature="e#5093#5123#0" />
+                <element signature="e#5153#5177#0" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/hw6-responses.tsv">
+          <provider selected="true" editor-type-id="csv-text-editor" />
+          <provider editor-type-id="csv-table-editor">
+            <state showInfoPanel="true" fixedHeaders="false" rowLines="3" />
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/dependency-demo-stub.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="796">
+            <state relative-caret-position="1101">
               <caret line="76" selection-start-line="76" selection-end-line="76" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/qa_engine/score_answers.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="174">
+              <caret line="6" column="33" selection-start-line="6" selection-start-column="33" selection-end-line="6" selection-end-column="33" />
+              <folding>
+                <element signature="e#0#19#0" expanded="true" />
+                <element signature="e#185#1653#0" />
+                <element signature="e#401#1176#0" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -84,7 +119,7 @@
         <entry file="file://$PROJECT_DIR$/chunk-demo.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="458">
-              <caret line="62" selection-start-line="62" selection-end-line="62" />
+              <caret line="57" selection-start-line="57" selection-end-line="57" />
             </state>
           </provider>
         </entry>
@@ -92,17 +127,17 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/qa_engine/base.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1927">
-              <caret line="84" column="28" selection-start-line="84" selection-start-column="28" selection-end-line="84" selection-end-column="28" />
+            <state relative-caret-position="507">
+              <caret line="90" selection-start-line="90" selection-end-line="90" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/baseline-stub.py">
+        <entry file="file://$USER_HOME$/.local/lib/python3.6/site-packages/nltk/tree.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="100">
-              <caret line="44" column="8" selection-start-line="44" selection-start-column="8" selection-end-line="44" selection-end-column="8" />
+            <state relative-caret-position="323">
+              <caret line="108" selection-start-line="108" selection-end-line="108" />
             </state>
           </provider>
         </entry>
@@ -114,6 +149,10 @@
       <find>lemma</find>
       <find>lmtzr</find>
       <find>stopwor</find>
+      <find>subjects</find>
+      <find>question_t</find>
+      <find>find_can</find>
+      <find>get_nouns</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -125,6 +164,7 @@
       <list>
         <option value="$PROJECT_DIR$/constituency-demo-stub.py" />
         <option value="$PROJECT_DIR$/chunk-demo.py" />
+        <option value="$PROJECT_DIR$/qa_engine/score_answers.py" />
         <option value="$PROJECT_DIR$/qa.py" />
       </list>
     </option>
@@ -146,6 +186,11 @@
             <path>
               <item name="nlp-collab" type="b2602c69:ProjectViewProjectNode" />
               <item name="nlp-collab" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="nlp-collab" type="b2602c69:ProjectViewProjectNode" />
+              <item name="nlp-collab" type="462c0819:PsiDirectoryNode" />
+              <item name="qa_engine" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
@@ -169,7 +214,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.chunk-demo">
+  <component name="RunManager" selected="Python.qa">
     <configuration name="baseline-stub" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="nlp-collab" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -204,6 +249,27 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/chunk-demo.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="constituency-demo-stub" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="nlp-collab" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/constituency-demo-stub.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -259,11 +325,13 @@
       <item itemvalue="Python.dependency-demo-stub" />
       <item itemvalue="Python.qa" />
       <item itemvalue="Python.baseline-stub" />
+      <item itemvalue="Python.constituency-demo-stub" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.chunk-demo" />
         <item itemvalue="Python.qa" />
+        <item itemvalue="Python.constituency-demo-stub" />
+        <item itemvalue="Python.chunk-demo" />
         <item itemvalue="Python.dependency-demo-stub" />
         <item itemvalue="Python.baseline-stub" />
       </list>
@@ -301,18 +369,18 @@
     <frame x="0" y="50" width="3840" height="2110" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.24980237" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.25270092" />
       <window_info id="Structure" order="1" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
-      <window_info anchor="bottom" id="Run" order="2" weight="0.32934782" />
-      <window_info anchor="bottom" id="Debug" order="3" visible="true" weight="0.39967725" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.30876815" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.4303389" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" />
       <window_info anchor="bottom" id="Event Log" order="7" side_tool="true" />
-      <window_info anchor="bottom" id="Python Console" order="8" weight="0.32934782" />
+      <window_info anchor="bottom" id="Python Console" order="8" weight="0.32920924" />
       <window_info anchor="bottom" id="Terminal" order="9" />
       <window_info anchor="bottom" id="Version Control" order="10" />
       <window_info anchor="right" id="Commander" order="0" weight="0.4" />
@@ -353,10 +421,6 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/constituency-demo-stub.py</url>
-          <line>52</line>
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/dependency-demo-stub.py</url>
           <line>52</line>
           <option name="timeStamp" value="41" />
@@ -367,24 +431,24 @@
           <option name="timeStamp" value="44" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/qa.py</url>
-          <line>58</line>
-          <option name="timeStamp" value="54" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/qa.py</url>
-          <line>177</line>
-          <option name="timeStamp" value="56" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/chunk-demo.py</url>
           <line>113</line>
           <option name="timeStamp" value="57" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/chunk-demo.py</url>
-          <line>57</line>
-          <option name="timeStamp" value="58" />
+          <url>file://$PROJECT_DIR$/constituency-demo-stub.py</url>
+          <line>59</line>
+          <option name="timeStamp" value="138" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/constituency-demo-stub.py</url>
+          <line>26</line>
+          <option name="timeStamp" value="139" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/qa.py</url>
+          <line>173</line>
+          <option name="timeStamp" value="150" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
@@ -400,16 +464,6 @@
     <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36-32/Lib/codecs.py" />
     <entry file="file://$USER_HOME$/AppData/Roaming/Python/Python36/site-packages/nltk/tag/perceptron.py" />
     <entry file="file://$USER_HOME$/AppData/Roaming/Python/Python36/site-packages/nltk/tree.py" />
-    <entry file="file://$PROJECT_DIR$/constituency-demo-stub.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1537">
-          <caret line="53" column="42" selection-start-line="53" selection-start-column="42" selection-end-line="53" selection-end-column="42" />
-          <folding>
-            <element signature="e#24#40#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/_pydev_imps/_pydev_execfile.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="493">
@@ -417,33 +471,85 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/qa_engine/base.py">
+    <entry file="file://$PROJECT_DIR$/chunk-demo.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1927">
-          <caret line="84" column="28" selection-start-line="84" selection-start-column="28" selection-end-line="84" selection-end-column="28" />
+        <state relative-caret-position="458">
+          <caret line="57" selection-start-line="57" selection-end-line="57" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/.local/lib/python3.6/site-packages/nltk/tree.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="323">
+          <caret line="108" selection-start-line="108" selection-end-line="108" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/.local/lib/python3.6/site-packages/nltk/chunk/regexp.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="323">
+          <caret line="108" selection-start-line="108" selection-end-line="108" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/dependency-demo-stub.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="796">
+        <state relative-caret-position="1101">
           <caret line="76" selection-start-line="76" selection-end-line="76" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/chunk-demo.py">
+    <entry file="file://$PROJECT_DIR$/qa_engine/score_answers.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="458">
-          <caret line="62" selection-start-line="62" selection-end-line="62" />
+        <state relative-caret-position="174">
+          <caret line="6" column="33" selection-start-line="6" selection-start-column="33" selection-end-line="6" selection-end-column="33" />
+          <folding>
+            <element signature="e#0#19#0" expanded="true" />
+            <element signature="e#185#1653#0" />
+            <element signature="e#401#1176#0" />
+          </folding>
         </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/qa_engine/__init__.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/constituency-demo-stub.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="845">
+          <caret line="59" selection-start-line="59" selection-end-line="59" />
+          <folding>
+            <element signature="e#24#40#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/qa_engine/base.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="507">
+          <caret line="90" selection-start-line="90" selection-end-line="90" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/hw6-responses.tsv">
+      <provider selected="true" editor-type-id="csv-text-editor" />
+      <provider editor-type-id="csv-table-editor">
+        <state showInfoPanel="true" fixedHeaders="false" rowLines="3" />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/qa.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="700">
-          <caret line="88" column="86" lean-forward="true" selection-start-line="88" selection-start-column="86" selection-end-line="88" selection-end-column="86" />
+        <state relative-caret-position="608">
+          <caret line="323" column="4" selection-start-line="323" selection-start-column="4" selection-end-line="323" selection-end-column="4" />
           <folding>
             <element signature="e#1#34#0" expanded="true" />
+            <element signature="e#507#907#0" />
+            <element signature="e#3829#4032#0" />
+            <element signature="e#4034#4113#0" />
+            <element signature="e#5243#5298#0" />
+            <element signature="e#5490#5556#0" />
+            <element signature="e#5093#5123#0" />
+            <element signature="e#5153#5177#0" />
           </folding>
         </state>
       </provider>
