@@ -283,20 +283,9 @@ def get_question_type(question):
 
     # How
 
-def get_tree_words(root):
-    sent = []
-    for node in root:
-        if type(node) == nltk.Tree:
-            sent += get_tree_words(node)
-        elif type(node) == tuple:
-            sent.append(node[0])
-    return sent
 
 def pp_filter(subtree):
     return subtree.label() == "PP"
-
-def np_filter(subtree):
-    return subtree.label() == "NP"
 
 def is_location(prep):
     return prep[0] in LOC_PP
@@ -318,13 +307,6 @@ def find_locations(tree):
             locations.append(subtree)
 
     return locations
-
-
-def find_nouns(tree):
-    nouns = []
-    for subtree in tree.subtrees(filter=np_filter):
-        nouns.append(subtree)
-    return nouns
 
 
 # If two verbs are similar, this will return an integer that adds to the overlap score. So feel and felt will have
@@ -350,84 +332,61 @@ def get_candidates(question, story, best_sentences):
     question_type = get_question_type(question)
     qverb = get_verb(question)
     qsub = find_subjects(question['dep'])
-    qwords = nltk.word_tokenize(question['text'])
-    qtags = nltk.pos_tag(qwords)
-    story_subjects = find_subjects(story['story_dep'])
     lmtzr = WordNetLemmatizer()
 
+    print("Question Dep is " + str(question['dep']))
+
+
     if question_type == 'who':
-        possible_answers = story_subjects
-
-        if ('story' or 'Story') in question['text'] and ('about' in question['text']):
-            answer = 'A ' + story_subjects[0]
-            for subj in story_subjects[1:]:
-                answer += ' and a ' + subj
-
+        #possible_answers = find_subjects(story['dep'])
+        print("who")
 
     elif question_type == 'what':
-        grammar =   """
-                    N: {<PRP>|<NN.*>}
-                    NV: {<NP>|<N> <V.*> <NP>|<N>}
-                    ADJ: { <JJ.*>}
-                    NP: { <DT>? <ADJ>* <N>+}
-                    """
-        chunker = nltk.RegexpParser(GRAMMAR)
-        subj = lmtzr.lemmatize(qsub[0], 'n')
-        verb = lmtzr.lemmatize(qverb, 'v')
+<<<<<<< HEAD
+        print("What")
 
+    elif question_type == 'when':
+        print("When")
 
-        for sent in best_sentences:
-            tree = chunker.parse(sent[1])
-            # print(tree)
-            locations = find_nouns(tree)
-            if len(locations) > 0:
-                locations = get_tree_words(locations)
-                # Get word right before location is given
-            candidates.extend(locations)
-        answer = ' '.join(candidates)
-        print(answer)
+    elif question_type == 'where':
+        print("Where")
+
+    elif question_type == 'why':
+        print("Why")
+
+    elif question_type == 'how':
+        print("how")
+
+=======
+        raise NotImplemented
 
     elif question_type == 'when':
         raise NotImplemented
+
     elif question_type == 'where':
         grammar =   """
                     N: {<PRP>|<NN.*>}
-                    ADJ: {<JJ.*>}
-                    NP: {<DT>? <ADJ >* <N>+}
-                    PP: {<IN> <NP> <IN>? <NP>?}
+                    ADJ: { < JJ. * >}
+                    NP: { < DT >? < ADJ > * < N > +}
+                    PP: { < IN > < NP >}
                     """
         chunker = nltk.RegexpParser(grammar)
         subj = lmtzr.lemmatize(qsub[0], 'n')
         verb = lmtzr.lemmatize(qverb, 'v')
 
         for sent in best_sentences:
-
-            # If the verb and subject are in the sentence, use this solution only
-            if subj in sent[0] or verb in sent[0]:
-                tree = chunker.parse(sent[1])
-                locations = find_locations(tree)
-                if len(locations) > 0:
-                    locations = get_tree_words(locations)
-                candidates = locations
-                break
-
-            # If a sent isn't found where subj and verb are in the solution, use all sentences locations
-            else:
-                tree = chunker.parse(sent[1])
-                locations = find_locations(tree)
-                if len(locations) > 0:
-                    locations = get_tree_words(locations)
-                candidates.extend(locations)
-
-
-        answer = ' '.join(candidates)
-        print(answer)
+            tree = chunker.parse(sent[1])
+            # print(tree)
+            locations = find_locations(tree)
+            candidates.extend(locations)
+            print(candidates)
 
     elif question_type == 'why':
         raise NotImplemented
 
     elif question_type == 'how':
         raise NotImplemented
+>>>>>>> d3dda806ce7072d09ec645f199d886204ecd5ff8
 
 def get_answer(question, story):
     """
@@ -467,7 +426,6 @@ def get_answer(question, story):
     chunker = nltk.RegexpParser(GRAMMAR)
     lmtzr = WordNetLemmatizer()
     best_sentences = get_best_sentences(question, story)
-
     candidates = get_candidates(question, story, best_sentences)
 
 
@@ -496,7 +454,7 @@ class QAEngine(QABase):
         return answer
 
 
-def run_qa():
+def run_qa(evaluate=False):
     QA = QAEngine()
     QA.run()
     QA.save_answers()
@@ -504,7 +462,7 @@ def run_qa():
 #############################################################
 
 def main():
-    run_qa()
+    run_qa(evaluate=False)
     # You can uncomment this next line to evaluate your
     # answers, or you can run score_answers.py
     score_answers()
