@@ -413,7 +413,15 @@ def get_candidates(question, story, best_sentences):
         return answer
 
     elif question_type == 'why':
-
+        for sent in best_sentences:
+            found_words = []
+            for word in ['because', 'so that', 'in order to']:
+                if word in sent[0]:
+                    found_words.append(word)
+            for word in found_words:
+                index = sent[0].index(word)
+                candidates.extend(sent[0][index:])
+        return ' '.join(candidates)
 
     return ''
 
