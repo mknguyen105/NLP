@@ -406,8 +406,8 @@ def get_candidates(question, story, best_sentences):
                 locations = find_locations(tree)
                 if len(locations) > 0:
                     locations = get_tree_words(locations)
-                candidates = locations
-                break
+                    candidates = locations
+                    break
 
             # If a sent isn't found where subj and verb are in the solution, use all sentences locations
             else:
