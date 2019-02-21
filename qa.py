@@ -386,7 +386,10 @@ def get_candidates(question, story, best_sentences):
                     PP: {<IN> <NP> <IN>? <NP>?}
                     """
         chunker = nltk.RegexpParser(grammar)
-        subj = lmtzr.lemmatize(qsub[0], 'n')
+        if len(qsub) > 0:
+            subj = lmtzr.lemmatize(qsub[0], 'n')
+        else:
+            subj = story_subjects[0]
         verb = lmtzr.lemmatize(qverb, 'v')
 
         for sent in best_sentences:
