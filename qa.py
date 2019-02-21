@@ -509,7 +509,7 @@ def run_qa(evaluate=False):
 #############################################################
 
 def main():
-    run_qa(evaluate=False)
+    run_qa(evaluate=True)
     # You can uncomment this next line to evaluate your
     # answers, or you can run score_answers.py
     score_answers()
