@@ -357,16 +357,22 @@ def get_candidates(question, story, best_sentences):
 
     if question_type == 'who':
         possible_answers = story_subjects
-
-        if ('story' or 'Story') in question['text'] and ('about' in question['text']):
-            answer = 'A ' + story_subjects[0]
-            for subj in story_subjects[1:]:
-                answer += ' and a ' + subj
+        answer = ''
+        if type(qsub) == list and len(qsub) > 0:
+            if qsub[0] == 'story':
+                answer = 'A ' + story_subjects[0]
+                for subj in story_subjects[1:]:
+                    answer += ' and a ' + subj
+        else:
+            return ' '.join(story_subjects)
+        return answer
 
 
     elif question_type == 'what':
 
-        return [raw_sent for (raw_sent, sent, count) in best_sentences[0:3]]
+        answer = [raw_sent for (raw_sent, sent, count) in best_sentences[0:2]]
+        answer = ' '.join(answer)
+        return answer
 
     elif question_type == 'when':
         for sent in best_sentences:
@@ -418,12 +424,12 @@ def get_candidates(question, story, best_sentences):
     elif question_type == 'why':
         for sent in best_sentences:
             found_words = []
-            for word in ['because', 'so that', 'in order to']:
+            for word in ['because', 'so that', 'in order to',]:
                 if word in sent[0]:
                     found_words.append(word)
             for word in found_words:
                 index = sent[0].index(word)
-                candidates.extend(sent[0][index:])
+                candidates.append(sent[0][index:])
         return ' '.join(candidates)
 
     return ''
@@ -467,12 +473,13 @@ def get_answer(question, story):
     lmtzr = WordNetLemmatizer()
     best_sentences = get_best_sentences(question, story)
     candidates = get_candidates(question, story, best_sentences)
+    answer = candidates
 
 
 
     # Take the top three sentences and join them together to increase recall before searching for an answer
-    answer = [raw_sent for (raw_sent, sent, count) in best_sentences[0:3]]
-    answer = ' '.join(answer)
+    #answer = [raw_sent for (raw_sent, sent, count) in best_sentences[0:3]]
+    #answer = ' '.join(answer)
     #answer = get_sentence(best_sentences)
 
     return answer
