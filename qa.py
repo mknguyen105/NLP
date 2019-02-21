@@ -20,6 +20,7 @@ GRAMMAR =   """
             VP: {<TO>? <V> (<NP>|<PP>)*}
             """
 
+
 LOC_PP = set(["in", "on", "at", "behind", "below", "beside", "above", "across", "along", "below", "between", "under",
               "near", "inside"])
 TIME_NN = set(['today', 'yesterday', "o'clock", 'year', 'month', 'hour', 'minute', 'second', 'week', 'after', 'before'])
@@ -283,8 +284,29 @@ def get_question_type(question):
     # How
 
 
-def get_locations(best_sentences, chunker):
-    print("Get locations")
+def pp_filter(subtree):
+    return subtree.label() == "PP"
+
+def is_location(prep):
+    return prep[0] in LOC_PP
+
+def find_locations(tree):
+    # Starting at the root of the tree
+    # Traverse each node and get the subtree underneath it
+    # Filter out any subtrees who's label is not a PP
+    # Then check to see if the first child (it must be a preposition) is in
+    # our set of locative markers
+    # If it is then add it to our list of candidate locations
+
+    # How do we modify this to return only the NP: add [1] to subtree!
+    # How can we make this function more robust?
+    # Make sure the crow/subj is to the left
+    locations = []
+    for subtree in tree.subtrees(filter=pp_filter):
+        if is_location(subtree[0]):
+            locations.append(subtree)
+
+    return locations
 
 
 # If two verbs are similar, this will return an integer that adds to the overlap score. So feel and felt will have
@@ -306,25 +328,44 @@ def get_verb_similarity(verb1, verb2):
 
 # Increase precision by locating where in the best sentences the answer might be
 def get_candidates(question, story, best_sentences):
+    candidates = []
     question_type = get_question_type(question)
     qverb = get_verb(question)
     qsub = find_subjects(question['dep'])
+    lmtzr = WordNetLemmatizer()
 
     if question_type == 'who':
         possible_answers = find_subjects(story['dep'])
 
     elif question_type == 'what':
-
+        raise NotImplemented
 
     elif question_type == 'when':
+        raise NotImplemented
 
     elif question_type == 'where':
+        grammar =   """
+                    N: {<PRP>|<NN.*>}
+                    ADJ: { < JJ. * >}
+                    NP: { < DT >? < ADJ > * < N > +}
+                    PP: { < IN > < NP >}
+                    """
+        chunker = nltk.RegexpParser(grammar)
+        subj = lmtzr.lemmatize(qsub[0], 'n')
+        verb = lmtzr.lemmatize(qverb, 'v')
+
+        for sent in best_sentences:
+            tree = chunker.parse(sent[1])
+            # print(tree)
+            locations = find_locations(tree)
+            candidates.extend(locations)
+            print(candidates)
 
     elif question_type == 'why':
-        patternt =
+        raise NotImplemented
 
     elif question_type == 'how':
-
+        raise NotImplemented
 
 def get_answer(question, story):
     """
