@@ -478,8 +478,8 @@ def get_answer(question, story):
 
 
     # Take the top three sentences and join them together to increase recall before searching for an answer
-    #answer = [raw_sent for (raw_sent, sent, count) in best_sentences[0:3]]
-    #answer = ' '.join(answer)
+    answer = [raw_sent for (raw_sent, sent, count) in best_sentences[0:1]]
+    answer = ' '.join(answer)
     #answer = get_sentence(best_sentences)
 
     return answer
