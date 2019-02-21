@@ -310,20 +310,27 @@ def get_candidates(question, story, best_sentences):
     qverb = get_verb(question)
     qsub = find_subjects(question['dep'])
 
+    print("Question Dep is " + str(question['dep']))
+
+
     if question_type == 'who':
-        possible_answers = find_subjects(story['dep'])
+        #possible_answers = find_subjects(story['dep'])
+        print("who")
 
     elif question_type == 'what':
-
+        print("What")
 
     elif question_type == 'when':
+        print("When")
 
     elif question_type == 'where':
+        print("Where")
 
     elif question_type == 'why':
-        patternt =
+        print("Why")
 
     elif question_type == 'how':
+        print("how")
 
 
 def get_answer(question, story):
@@ -392,7 +399,7 @@ class QAEngine(QABase):
         return answer
 
 
-def run_qa():
+def run_qa(evaluate=False):
     QA = QAEngine()
     QA.run()
     QA.save_answers()
@@ -400,7 +407,7 @@ def run_qa():
 #############################################################
 
 def main():
-    run_qa()
+    run_qa(evaluate=False)
     # You can uncomment this next line to evaluate your
     # answers, or you can run score_answers.py
     score_answers()
