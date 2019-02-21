@@ -22,6 +22,7 @@ GRAMMAR =   """
 
 LOC_PP = set(["in", "on", "at", "behind", "below", "beside", "above", "across", "along", "below", "between", "under",
               "near", "inside"])
+TIME_NN = set(['today', 'yesterday', "o'clock", 'year', 'month', 'hour', 'minute', 'second', 'week', 'after', 'before'])
 
 def get_sentences(text):
     sentences = nltk.sent_tokenize(text)
@@ -52,6 +53,8 @@ def find_subjects(dep):
 
     return subjects
 
+
+# This should ultimately be redone using regex so that we can match longer chains of words like bigrams, trigrams etc...
 def get_best_sentences(question, story):
     """
        Answer Identification
@@ -90,24 +93,25 @@ def get_best_sentences(question, story):
 
     best_sentences = []
     verb_comp = False
+    to_verb = False
+
     #Classify question type
     verb_count = 0
     noun_count = 0
     prop_noun_count = 0
     keywords = []
     if type == "what":
-        verb_count = 0
-        noun_count = 3
+        verb_count = 5
+        noun_count = 5
         prop_noun_count = 2
         verb_comp = True
     elif type == "where":
         #Look for prepositional noun
         keywords = ["in", "on", "at", "behind", "below", "beside", "above", "across", "along", "below", "between", "under",
-              "near", "inside"]
-        keywords.extend(qsubj)
-        key_count = 1
-        verb_count = 2
-        noun_count = 2
+              "near", "inside", "from"]
+        key_count = 5
+        verb_count = 1
+        noun_count = 1
     elif type == "who":
         #Look for person
         verb_count = 2
@@ -116,27 +120,44 @@ def get_best_sentences(question, story):
       #  keywords = [subj.lower() for subj in story_subjects]
        # key_count = 4
     elif type == "why":
-        key_count = 1
+        key_count = 4
         keywords = ['because', 'so that', 'in order to']
+    elif type == 'when':
+        keywords = ['today', 'yesterday', "o'clock", 'year', 'month', 'hour', 'minute', 'second', 'week', 'after', 'before']
+        key_count = 5
 
 
     for sent in sentences:
         count = 0
         for token, pos in sent:
+            if token.lower() == 'today':
+                print()
             if token.lower() in keywords:
                 count = count + key_count
+
+            # Capture to + VERB relations to help with answers to why questions
+            if to_verb:
+                if pos == 'VBP' or pos == "VB":
+                    count += 1
+                to_verb = False
+            if type == 'why' and token == 'to':
+                to_verb = True
+
             for qword in question_words:
 
                 # If the token is a verb, check if it relates strongly to any of the question words
-                if (pos == "VBP" or pos == "VB") and verb_comp:
+                if (pos == "VBP" or pos == "VB" or pos == "VBD" or pos == "VBN") and verb_comp:
                    count += get_verb_similarity(qword, token)
+
 
                 # Stem the question words and remove the stopwords before comparing them to the token
                 if stemmer.stem(qword) == stemmer.stem(token) and token not in STOPWORDS:
                 #if stemmer.stem(qword) == stemmer.stem(token):
 
                     # Add noun_count points for each noun verb, and verb_count points for each verb found
-                    if pos == "VBP" or pos == "VB":
+                    if token == "fired":
+                        print()
+                    if pos == "VBP" or pos == "VB" or pos == "VBD" or pos == "VBN":
                         count = count + verb_count
                     elif pos == "NN" or pos == "NNS":
                         count = count + noun_count
@@ -267,9 +288,7 @@ def get_verb_similarity(verb1, verb2):
         for syn1 in word1:
             for syn2 in word2:
                 if syn1.path_similarity(syn2) == 1:
-                    return 1
-                elif syn1.path_similarity(syn2) > 5:
-                    score = 0
+                    return 2
     except:
         return 0
 
@@ -313,7 +332,9 @@ def get_answer(question, story):
     chunker = nltk.RegexpParser(GRAMMAR)
     lmtzr = WordNetLemmatizer()
     best_sentences = get_best_sentences(question, story)
-    answer = [raw_sent for (raw_sent, sent, count) in best_sentences[0:4]]
+
+    # Take the top three sentences and join them together to increase recall before searching for an answer
+    answer = [raw_sent for (raw_sent, sent, count) in best_sentences[0:3]]
     answer = ' '.join(answer)
     #answer = get_sentence(best_sentences)
 
