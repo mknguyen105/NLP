@@ -283,9 +283,20 @@ def get_question_type(question):
 
     # How
 
+def get_tree_words(root):
+    sent = []
+    for node in root:
+        if type(node) == nltk.Tree:
+            sent += get_tree_words(node)
+        elif type(node) == tuple:
+            sent.append(node[0])
+    return sent
 
 def pp_filter(subtree):
     return subtree.label() == "PP"
+
+def np_filter(subtree):
+    return subtree.label() == "NP"
 
 def is_location(prep):
     return prep[0] in LOC_PP
@@ -307,6 +318,13 @@ def find_locations(tree):
             locations.append(subtree)
 
     return locations
+
+
+def find_nouns(tree):
+    nouns = []
+    for subtree in tree.subtrees(filter=np_filter):
+        nouns.append(subtree)
+    return nouns
 
 
 # If two verbs are similar, this will return an integer that adds to the overlap score. So feel and felt will have
@@ -332,61 +350,72 @@ def get_candidates(question, story, best_sentences):
     question_type = get_question_type(question)
     qverb = get_verb(question)
     qsub = find_subjects(question['dep'])
+    qwords = nltk.word_tokenize(question['text'])
+    qtags = nltk.pos_tag(qwords)
+    story_subjects = find_subjects(story['story_dep'])
     lmtzr = WordNetLemmatizer()
 
-    print("Question Dep is " + str(question['dep']))
-
-
     if question_type == 'who':
-        #possible_answers = find_subjects(story['dep'])
-        print("who")
+        possible_answers = story_subjects
+
+        if ('story' or 'Story') in question['text'] and ('about' in question['text']):
+            answer = 'A ' + story_subjects[0]
+            for subj in story_subjects[1:]:
+                answer += ' and a ' + subj
+
 
     elif question_type == 'what':
-<<<<<<< HEAD
-        print("What")
+
+        return [raw_sent for (raw_sent, sent, count) in best_sentences[0:3]]
 
     elif question_type == 'when':
-        print("When")
+        for sent in best_sentences:
+            for pattern in ['today', 'yesterday', "o'clock", 'year', 'month', 'hour', 'minute', 'second', 'week', 'after', 'before']:
+                candidates.extend(re.findall(pattern, sent[0]))
+        answer = []
+        answer = [word for word in candidates if word not in answer]
 
-    elif question_type == 'where':
-        print("Where")
+        return ' '.join(answer)
 
-    elif question_type == 'why':
-        print("Why")
-
-    elif question_type == 'how':
-        print("how")
-
-=======
-        raise NotImplemented
-
-    elif question_type == 'when':
-        raise NotImplemented
 
     elif question_type == 'where':
         grammar =   """
                     N: {<PRP>|<NN.*>}
-                    ADJ: { < JJ. * >}
-                    NP: { < DT >? < ADJ > * < N > +}
-                    PP: { < IN > < NP >}
+                    ADJ: {<JJ.*>}
+                    NP: {<DT>? <ADJ >* <N>+}
+                    PP: {<IN> <NP> <IN>? <NP>?}
                     """
         chunker = nltk.RegexpParser(grammar)
         subj = lmtzr.lemmatize(qsub[0], 'n')
         verb = lmtzr.lemmatize(qverb, 'v')
 
         for sent in best_sentences:
-            tree = chunker.parse(sent[1])
-            # print(tree)
-            locations = find_locations(tree)
-            candidates.extend(locations)
-            print(candidates)
+
+            # If the verb and subject are in the sentence, use this solution only
+            if subj in sent[0] or verb in sent[0]:
+                tree = chunker.parse(sent[1])
+                locations = find_locations(tree)
+                if len(locations) > 0:
+                    locations = get_tree_words(locations)
+                candidates = locations
+                break
+
+            # If a sent isn't found where subj and verb are in the solution, use all sentences locations
+            else:
+                tree = chunker.parse(sent[1])
+                locations = find_locations(tree)
+                if len(locations) > 0:
+                    locations = get_tree_words(locations)
+                candidates.extend(locations)
+
+
+        answer = ' '.join(candidates)
+        return answer
 
     elif question_type == 'why':
-        raise NotImplemented
 
-    elif question_type == 'how':
-        raise NotImplemented
->>>>>>> d3dda806ce7072d09ec645f199d886204ecd5ff8
+
+    return ''
 
 def get_answer(question, story):
     """
