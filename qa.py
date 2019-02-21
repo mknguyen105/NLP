@@ -30,6 +30,8 @@ def get_sentences(text):
     sentences = [nltk.pos_tag(sent) for sent in sentences]
     return sentences
 
+
+# This will find all of the subjects of a story or question
 def find_subjects(dep):
     subjects = []
     i = 0
@@ -92,6 +94,9 @@ def get_best_sentences(question, story):
     print('\n' + question_text + '\n')
 
     best_sentences = []
+
+    # These are used for tuning in what and why questions. Verb_comp gets similar verbs in what questions, and to_verb
+    # picks up to + VERB relations for why questions like "to eat" or "to visit"
     verb_comp = False
     to_verb = False
 
@@ -100,6 +105,9 @@ def get_best_sentences(question, story):
     noun_count = 0
     prop_noun_count = 0
     keywords = []
+
+    # Nouns, proper nouns, verbs and patterns and words specific to answers for each question type add differing points
+    # to the sentences overlap score. Key count is how many points the key words provide.
     if type == "what":
         verb_count = 5
         noun_count = 5
@@ -117,8 +125,6 @@ def get_best_sentences(question, story):
         verb_count = 2
         noun_count = 2
         prop_noun_count = 3
-      #  keywords = [subj.lower() for subj in story_subjects]
-       # key_count = 4
     elif type == "why":
         key_count = 4
         keywords = ['because', 'so that', 'in order to']
@@ -130,8 +136,8 @@ def get_best_sentences(question, story):
     for sent in sentences:
         count = 0
         for token, pos in sent:
-            if token.lower() == 'today':
-                print()
+
+            # Check if the token is a keyword and increase score if it is
             if token.lower() in keywords:
                 count = count + key_count
 
@@ -143,20 +149,18 @@ def get_best_sentences(question, story):
             if type == 'why' and token == 'to':
                 to_verb = True
 
+
             for qword in question_words:
 
                 # If the token is a verb, check if it relates strongly to any of the question words
                 if (pos == "VBP" or pos == "VB" or pos == "VBD" or pos == "VBN") and verb_comp:
                    count += get_verb_similarity(qword, token)
 
-
                 # Stem the question words and remove the stopwords before comparing them to the token
                 if stemmer.stem(qword) == stemmer.stem(token) and token not in STOPWORDS:
                 #if stemmer.stem(qword) == stemmer.stem(token):
 
                     # Add noun_count points for each noun verb, and verb_count points for each verb found
-                    if token == "fired":
-                        print()
                     if pos == "VBP" or pos == "VB" or pos == "VBD" or pos == "VBN":
                         count = count + verb_count
                     elif pos == "NN" or pos == "NNS":
@@ -166,13 +170,18 @@ def get_best_sentences(question, story):
                     else:
                         count = count + 1
 
+        # Join sentences and their scores and print out for debugging
         joined_sentence = ' '.join([word for (word,tag) in sent])
-        sent_tuple = (joined_sentence, sent, count)
-        best_sentences.append(sent_tuple)
         print(joined_sentence + " " + str(count))
 
+        # Create a list of tuples containing (raw sentence, tokenized sentence with tags, overlap score)
+        sent_tuple = (joined_sentence, sent, count)
+        best_sentences.append(sent_tuple)
+
+    # Sort list of tuples in desc order by their overlap score
     best_sentences.sort(key=lambda x: x[2], reverse=True)
 
+    # Return the list of sentence tuples from above
     return best_sentences
 
 def get_sentence(sentences):
@@ -199,7 +208,6 @@ def get_verb(dep):
     verb = lmtzr.lemmatize(verb, 'v')
     return verb
 
-
 def get_nsubj(dep):
     nsubjs = []
     i = 0
@@ -214,8 +222,6 @@ def get_nsubj(dep):
         i += 1
 
     return nsubjs
-
-
 
 def matches(pattern, root):
     # Base cases to exit our recursion
@@ -280,6 +286,9 @@ def get_question_type(question):
 def get_locations(best_sentences, chunker):
     print("Get locations")
 
+
+# If two verbs are similar, this will return an integer that adds to the overlap score. So feel and felt will have
+# the same meaning in some contexts, so it will return whatever value it's set to return on match
 def get_verb_similarity(verb1, verb2):
     score = 0
     try:
@@ -293,6 +302,29 @@ def get_verb_similarity(verb1, verb2):
         return 0
 
     return score
+
+
+# Increase precision by locating where in the best sentences the answer might be
+def get_candidates(question, story, best_sentences):
+    question_type = get_question_type(question)
+    qverb = get_verb(question)
+    qsub = find_subjects(question['dep'])
+
+    if question_type == 'who':
+        possible_answers = find_subjects(story['dep'])
+
+    elif question_type == 'what':
+
+
+    elif question_type == 'when':
+
+    elif question_type == 'where':
+
+    elif question_type == 'why':
+        patternt =
+
+    elif question_type == 'how':
+
 
 def get_answer(question, story):
     """
@@ -332,6 +364,9 @@ def get_answer(question, story):
     chunker = nltk.RegexpParser(GRAMMAR)
     lmtzr = WordNetLemmatizer()
     best_sentences = get_best_sentences(question, story)
+    candidates = get_candidates(question, story, best_sentences)
+
+
 
     # Take the top three sentences and join them together to increase recall before searching for an answer
     answer = [raw_sent for (raw_sent, sent, count) in best_sentences[0:3]]
