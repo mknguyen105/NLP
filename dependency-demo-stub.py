@@ -7,7 +7,7 @@ from qa_engine.base import QABase
     
 def find_main(graph):
     for node in graph.nodes.values():
-        if node['rel'] == 'root':
+        if node['rel'] == 'root' or node['rel'] == 'Root':
             return node
     return None
     
