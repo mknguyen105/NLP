@@ -28,7 +28,7 @@ def get_dependents(node, graph):
     return results
 
 
-def find_answer(qgraph, sgraph):
+def find_answer(qgraph, sgraph, rel):
     qmain = find_main(qgraph)
     qword = qmain["word"]
 
@@ -39,7 +39,7 @@ def find_answer(qgraph, sgraph):
         if node.get('head', None) == snode["address"]:
             #print(node["word"], node["rel"])
 
-            if node['rel'] == "nmod":
+            if node['rel'] == rel:
                 deps = get_dependents(node, sgraph)
                 deps = sorted(deps+[node], key=operator.itemgetter("address"))
                 
@@ -52,7 +52,6 @@ if __name__ == '__main__':
     # Get the first question and its story
     q = driver.get_question("fables-01-1")
     story = driver.get_story(q["sid"])
-
     # get the dependency graph of the first question
     qgraph = q["dep"]
     #print("qgraph:", qgraph)
