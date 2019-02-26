@@ -1,0 +1,33 @@
+1.
+My team:
+Matthew Wark (Me) - Turning in Code
+Minh Nguyen
+Raymond Lee
+
+2.
+Tasks completed:
+Get best sentences:
+We employed a weighted overlap measure to find the sentences most similar to the question.
+We found the subject using the dep graph of the question, and same with the verb
+When we encountered an overlapping word, we checked what part of speech it was and assigned
+the weight to the word, or the overlap score based off of the part of speech's relevance
+to the question type.
+For 'what' questions, we checked if 2 verbs were similar to each other using wordnet, which
+helped match words like 'felt' and 'feel'.
+We also searched for keywords in the sentences, relevant to each type of question. We have
+lists of words associated with time, location etc...
+The sentences were then placed into tuples that contain the word tokenized sentence, the raw
+sentence and the score of the sentence. These were then sorted by their score and returned.
+From here, we experimented with various tuning setups until achieving a recall of 100 using the
+top 3 sentences for each question. We documented our results and moved on to try to extract the
+answers using chunking, which was relatively ineffective for all but location questions.
+
+3.
+I contributed to the overall structure of the program, and several of the weight options in get
+best sentences. I also added functions to get verbs, nouns, read words from dep graphs and more.
+
+4.
+Our group was a little dysfunctional, likely because of midterms and a bit of a late start, so
+we were more or less working independently and then trying to merge our solutions piece by piece,
+which was not very effective, so each of us have pretty much built each part individually at least
+once.
