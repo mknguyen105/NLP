@@ -24,7 +24,7 @@ GRAMMAR =   """
 
 LOC_PP = set(["in", "on", "at", "behind", "below", "beside", "above", "across", "along", "below", "between", "under",
               "near", "inside"])
-TIME_NN = set(['today', 'yesterday', "o'clock", 'year', 'month', 'hour', 'minute', 'second', 'week', 'after', 'before'])
+TIME_NN = set(['today', 'yesterday', "o'clock", 'pm', 'year', 'month', 'hour', 'minute', 'second', 'week', 'after', 'before'])
 
 # From dep demo ********************************************************************************************************
 def find_main(graph):
@@ -164,16 +164,18 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
     # a match of that type in the question. So if the root of the question matches the nsubj of the sentence,
     # rel_score_dict['root'] points will be added to the sentence score.
     rel_score_dict = {
-    'root' : 3,
-    'nmod' : 2,
-    'dobj' : 2,
-    'nsubj' : 1,
-    'nsubjpass' : 1,
-    'nsubj' : 1,
-    'xcomp' : 1,
-    'conj' : 1,
-    'advcl' : 1,
-    'compound' : 1
+    'root' :        3,
+    'nmod' :        2,
+    'dobj' :        2,
+    'nsubj' :       2,
+    'nsubjpass' :   2,
+    'xcomp' :       1,
+    'conj' :        1,
+    'advcl' :       1,
+    'compound' :    1,
+    'aux' :         1,
+    'case' :        1,
+    'mark' :        0
     }
 
     # Find all of the dependencies listed as keys in the rel score dict for the question and store them as a dictionary
@@ -190,19 +192,10 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
         # Find the sentence dependencies for each sentence and store in a dict just like we did for the question above
         sentence_relations = get_graph_rels(sent_graph, rel_score_dict)
 
-        # Check one to one comparisons like question nsubj vs sentence nsubj
-        for rel, relation in question_relations.items():
-            score += get_rel_score(question_relations, sentence_relations, rel, rel, rel_score_dict)
-
-        # Check other comparisons that might be relevant like question nsubj to sentence nsubjpass
-        score += get_rel_score(question_relations, sentence_relations, 'nsubj', 'nsubjpass', rel_score_dict)
-        score += get_rel_score(question_relations, sentence_relations, 'dobj', 'nmod', rel_score_dict)
-        score += get_rel_score(question_relations, sentence_relations, 'nmod', 'dobj', rel_score_dict)
-        score += get_rel_score(question_relations, sentence_relations, 'root', 'xcomp', rel_score_dict)
-        score += get_rel_score(question_relations, sentence_relations, 'root', 'conj', rel_score_dict)
-        score += get_rel_score(question_relations, sentence_relations, 'conj', 'advcl', rel_score_dict)
-        score += get_rel_score(question_relations, sentence_relations, 'advcl', 'conj', rel_score_dict)
-        score += get_rel_score(question_relations, sentence_relations, 'compound', 'nsubj', rel_score_dict)
+        # Compare the list of all different dependency relation combinations between question and story
+        for q_rel, q_relation in question_relations.items():
+            for s_rel, s_relation in sentence_relations.items():
+                score += get_rel_score(question_relations, sentence_relations, q_rel, s_rel, rel_score_dict)
 
 
         # Extra question specific checks
@@ -214,18 +207,31 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
         if question_type == 'where':
             for prep in LOC_PP:
                 if prep in sentence_words:
-                    score += 1
+                    score += 3
 
+        # Who
+
+        # When
+        if question_type == 'when':
+            for time_word in TIME_NN:
+                if time_word.lower() in sentence_words:
+                    score += 4
+                elif 'am' in sentence_words:
+                    score += 2
 
         # Why
         if question_type == 'why':
-            if 'because' in sentence_words:
-                score += 2
+            mark = sentence_relations['mark']
+            if mark is not None:
+                if mark == 'because':
+                    score += 3
+
+
 
         # Add the sentence to the list of scored sentences with a final score. List contains tuples where the first val
         # is the tokenized sentence/tag tuples list, and the second val is the score of the sentence.
         # Format is a list of tuples like: [([(word1, tag1),...], 3), ([(word1, tag1),...], 2)...]
-        scored_sentences.append((sentence, score))
+        scored_sentences.append((sentence, score, sent_graph))
 
     # Sort the scored sentences in desc order
     scored_sentences.sort(key=lambda x: x[1], reverse=True)
