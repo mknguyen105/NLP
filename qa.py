@@ -4,7 +4,7 @@ from qa_engine.score_answers import main as score_answers
 from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.stem.snowball import SnowballStemmer
 from nltk.corpus import wordnet as wn
-from textblob import TextBlob, Word
+
 
 import nltk
 STOPWORDS = nltk.corpus.stopwords.words('english')
@@ -73,12 +73,14 @@ def find_answer(qgraph, sgraph, rel):
                 return " ".join(dep["word"] for dep in deps)
 # End of dep demo ******************************************************************************************************
 
+# Returns the tokenized and tagged sentences from the passed text
 def get_sentences(text):
     sentences = nltk.sent_tokenize(text)
     sentences = [nltk.word_tokenize(sent) for sent in sentences]
     sentences = [nltk.pos_tag(sent) for sent in sentences]
     return sentences
 
+# Takes a dependency graph and a given rel, like s_dep and 'nsubj', and returns the word associated with it in the graph
 def get_dependency_word(dep_graph, rel):
     lmtzr = WordNetLemmatizer()
     for node in dep_graph.nodes.values():
@@ -91,6 +93,8 @@ def get_dependency_word(dep_graph, rel):
             return word.lower()
     return None
 
+# Takes a dependency graph and a given rel, like s_dep and 'nsubj', and returns a complete phrase associated with it.
+# The phrase starts at the given rel and finds all of it's dependents.
 def get_dependency_phrase(dep_graph, rel):
     lmtzr = WordNetLemmatizer()
     if rel == 'root':
@@ -107,12 +111,19 @@ def get_dependency_phrase(dep_graph, rel):
             deps = [str(dep['word']).lower() for dep in deps]
             return " ".join(deps)
 
+# This function returns either story_relations, or question relations
+# The function iterates through all of the given deps to get from the keys of rel_score_dict and finds the word
+# associated with the dependency in the graph.
 def get_graph_rels(dep_graph, rel_score_dict):
     rel_dict = {}
     for relation, score in rel_score_dict.items():
         rel_dict[relation] = get_dependency_word(dep_graph, relation)
     return rel_dict
 
+
+# This function takes the question dependencies and the sentence dependencies, checks for a match in q_rel, the question
+# dependency, and s_rel, the story dependency and assigns a score to the match based on the value of q_rel in the
+# rel_score_dict
 def get_rel_score(question_relations, sentence_relations, q_rel, s_rel, rel_score_dict):
     score = 0
     if question_relations[q_rel] is not None:
@@ -122,8 +133,8 @@ def get_rel_score(question_relations, sentence_relations, q_rel, s_rel, rel_scor
     return score
 
 
-
-# This should ultimately be redone using regex so that we can match longer chains of words like bigrams, trigrams etc...
+# Updated this to use dep graph to find best sentences based off of relationships between the dependencies in the
+# question and story sentences.
 def get_best_sentences(q_dep, s_dep, sentences, question_type):
 
     """
@@ -145,8 +156,13 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
     
     """""
 
+    # This creates tuples for each sentence in the story of the form [(sent1_dep, sent1_raw), (sent2_dep, sent2_raw)...]
     graph_sent_tuples = [(s_dep[i], sentences[i]) for i in range(len(sentences))]
 
+    # This is the dictionary that is used to check how many points to assign for matches between the dependency in the
+    # question and sentence. The keys are the dependency, and the value is the score added to the sentence when there is
+    # a match of that type in the question. So if the root of the question matches the nsubj of the sentence,
+    # rel_score_dict['root'] points will be added to the sentence score.
     rel_score_dict = {
     'root' : 3,
     'nmod' : 2,
@@ -160,13 +176,19 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
     'compound' : 1
     }
 
+    # Find all of the dependencies listed as keys in the rel score dict for the question and store them as a dictionary
+    # Format is {'nsubj' : 'crow', 'root': 'sit',...}
     question_relations = get_graph_rels(q_dep, rel_score_dict)
 
+    # Iterate through each of the sentences in the story and check for matches of various types between the sentence and
+    # the story
     scored_sentences = []
     for sent_graph, sentence in graph_sent_tuples:
+
         score = 0
+
+        # Find the sentence dependencies for each sentence and store in a dict just like we did for the question above
         sentence_relations = get_graph_rels(sent_graph, rel_score_dict)
-        sentence_words = [word.lower() for (word, tag) in sentence]
 
         # Check one to one comparisons like question nsubj vs sentence nsubj
         for rel, relation in question_relations.items():
@@ -183,78 +205,33 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
         score += get_rel_score(question_relations, sentence_relations, 'compound', 'nsubj', rel_score_dict)
 
 
+        # Extra question specific checks
 
+        # Create a list holding just the lowercase words in the sentence
+        sentence_words = [word.lower() for (word, tag) in sentence]
+
+        # Where
         if question_type == 'where':
             for prep in LOC_PP:
                 if prep in sentence_words:
                     score += 1
 
 
+        # Why
         if question_type == 'why':
             if 'because' in sentence_words:
                 score += 2
 
-
+        # Add the sentence to the list of scored sentences with a final score. List contains tuples where the first val
+        # is the tokenized sentence/tag tuples list, and the second val is the score of the sentence.
+        # Format is a list of tuples like: [([(word1, tag1),...], 3), ([(word1, tag1),...], 2)...]
         scored_sentences.append((sentence, score))
 
+    # Sort the scored sentences in desc order
     scored_sentences.sort(key=lambda x: x[1], reverse=True)
+
     return scored_sentences
 
-
-
-
-# LIKELY DELETE***************
-def get_verb(dep):
-    i = 0
-    verb = None
-    dep_graph = dep['dep']
-    while dep_graph.contains_address(i):
-        if dep_graph._rel(i) == 'root':
-            verb = dep_graph.get_by_address(i)['word']
-        i += 1
-    lmtzr = nltk.WordNetLemmatizer()
-    verb = lmtzr.lemmatize(verb, 'v')
-    return verb
-
-# This will find all of the subjects of a story or question
-def find_subjects(dep):
-    subjects = []
-    i = 0
-    if type(dep) == list:
-        for sentence in dep:
-            dep_graph = sentence
-            while dep_graph.contains_address(i):
-                if dep_graph._rel(i) == 'nsubj':
-                    word = dep_graph.get_by_address(i)['word']
-                    if word not in subjects:
-                        subjects.append(word.lower())
-                i += 1
-    else:
-        dep_graph = dep
-        while dep_graph.contains_address(i):
-            if dep_graph._rel(i) == 'nsubj':
-                word = dep_graph.get_by_address(i)['word']
-                if word not in subjects:
-                    subjects.append(word.lower())
-            i += 1
-
-    return subjects
-
-def get_nsubj(dep):
-    nsubjs = []
-    i = 0
-    dep_graph = dep['dep']
-    while dep_graph.contains_address(i):
-        if dep_graph._rel(i) == 'nsubj':
-            word = dep_graph.get_by_address(i)['word']
-            nsubjs.append(word)
-        if dep_graph._rel(i) == 'nmod':
-            word = dep_graph.get_by_address(i)['word']
-            nsubjs.append(word)
-        i += 1
-
-    return nsubjs
-# ****************************
 
 
 def matches(pattern, root):
@@ -324,26 +301,6 @@ def get_tree_words(root):
         elif type(node) == tuple:
             sent.append(node[0])
     return sent
-
-
-# LIKELY DELETE***********************************************
-# If two verbs are similar, this will return an integer that adds to the overlap score. So feel and felt will have
-# the same meaning in some contexts, so it will return whatever value it's set to return on match
-def get_verb_similarity(verb1, verb2):
-    score = 0
-    try:
-        word1 = wn.synsets(verb1, pos='v')
-        word2 = wn.synsets(verb2, pos='v')
-        for syn1 in word1:
-            for syn2 in word2:
-                if syn1.path_similarity(syn2) == 1:
-                    return 2
-    except:
-        return 0
-
-    return score
-#*************************************************************
-
 
 # Increase precision by locating where in the best sentences the answer might be
 def get_candidates(question, story, best_sentences):
