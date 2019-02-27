@@ -58,7 +58,8 @@ if __name__ == '__main__':
 
     # The answer is in the second sentence
     # You would have to figure this out like in the chunking demo
-    sgraph = story["sch_dep"][1]
+    sgraph = story["sch_dep"][0]
+    print(sgraph)
 
     
     lmtzr = WordNetLemmatizer()

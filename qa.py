@@ -279,12 +279,14 @@ def matches(pattern, root):
 # keep us organized if we're later thrown questions that don't have the question word as the first word, or if there is
 # no question word in the question at all
 def get_question_type(question):
-    question_types = ['who', 'what', 'when', 'where', 'why']
+    question_types = ['who', 'what', 'when', 'where', 'why', 'how', 'which']
 
     words = nltk.word_tokenize(question['text'])
     first_word = words[0].lower()
     if first_word in question_types:
         return first_word
+    else:
+        return 'decision'
 
     # Add other methods of detecting question type to cover it not being first word
     # Who
