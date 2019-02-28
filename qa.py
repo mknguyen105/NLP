@@ -1,18 +1,17 @@
-
 from qa_engine.base import QABase
 from qa_engine.score_answers import main as score_answers
 from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.stem.snowball import SnowballStemmer
 from nltk.corpus import wordnet as wn
 
-
 import nltk
+
 STOPWORDS = nltk.corpus.stopwords.words('english')
 
 # Our simple grammar from class (and the book)
 import nltk, re, operator
 
-GRAMMAR =   """
+GRAMMAR = """
             N: {<PRP>|<NN.*>}
             V: {<V.*>}
             ADJ: {<JJ.*>}
@@ -21,10 +20,11 @@ GRAMMAR =   """
             VP: {<TO>? <V> (<NP>|<PP>)*}
             """
 
-
 LOC_PP = set(["in", "on", "at", "behind", "below", "beside", "above", "across", "along", "below", "between", "under",
               "near", "inside"])
-TIME_NN = set(['today', 'yesterday', "o'clock", 'pm', 'year', 'month', 'hour', 'minute', 'second', 'week', 'after', 'before'])
+TIME_NN = set(
+    ['today', 'yesterday', "o'clock", 'pm', 'year', 'month', 'hour', 'minute', 'second', 'week', 'after', 'before'])
+
 
 # From dep demo ********************************************************************************************************
 def find_main(graph):
@@ -34,43 +34,81 @@ def find_main(graph):
     return None
 
 
-def find_node(word, graph):
+def find_rel(graph, word, rel):
     for node in graph.nodes.values():
-        if node["word"] == word:
-            return node
+        if (node['word'] == word):
+            # Find its rel
+            if node['rel'] == rel:
+                print("Rel Matched!")
+                deps = get_dependents(node, graph, [])  # third parameter []
+                deps = sorted(deps + [node], key=operator.itemgetter("address"))
+
+                return " ".join(dep["word"] for dep in deps)
     return None
 
 
-def get_dependents(node, graph, visited_nodes):
+def find_node(word, graph):
+    lmtzr = WordNetLemmatizer()
+    qword = lmtzr.lemmatize(word, 'v')
+    for node in graph.nodes.values():
+        ntag = node["tag"]
+        nword = node["word"]
+        if nword is not None:
+            if ntag.startswith("V"):
+                nword = lmtzr.lemmatize(nword, 'v')
+            else:
+                nword = lmtzr.lemmatize(nword, 'n')
+            if nword == qword:
+                print(nword)
+                return node
+    return None
+
+
+# Visited_nodes is a empty list
+# Node in a tree
+def get_dependents(node, graph, visited_nodes):  # visitednodes
     results = []
+
     if node in visited_nodes:
         return results
     visited_nodes.append(node)
     for item in node["deps"]:
         visited_nodes.append(item)
+
         address = node["deps"][item][0]
         dep = graph.nodes[address]
         results.append(dep)
         results = results + get_dependents(dep, graph, visited_nodes)
+        # results = results + get_dependents(dep, graph)
 
     return results
+
 
 def find_answer(qgraph, sgraph, rel):
     qmain = find_main(qgraph)
     qword = qmain["word"]
 
     snode = find_node(qword, sgraph)
+    # If snode is none, it means it couldn't find the root word
+    if snode == None:
+        return None
 
     for node in sgraph.nodes.values():
-        # print("node[head]=", node["head"])
-        if node.get('head', None) == snode["address"]:
-            # print(node["word"], node["rel"])
+        print("node[head]=", node["head"])
+        if node["head"] == None or snode["address"] == None:
+            print()
+            break
+        elif node.get('head', None) == snode["address"]:
+
+            print(node["word"], node["rel"])
 
             if node['rel'] == rel:
-                deps = get_dependents(node, sgraph)
+                deps = get_dependents(node, sgraph, [])
                 deps = sorted(deps + [node], key=operator.itemgetter("address"))
 
                 return " ".join(dep["word"] for dep in deps)
+
+
 # End of dep demo ******************************************************************************************************
 
 # Returns the tokenized and tagged sentences from the passed text
@@ -79,6 +117,7 @@ def get_sentences(text):
     sentences = [nltk.word_tokenize(sent) for sent in sentences]
     sentences = [nltk.pos_tag(sent) for sent in sentences]
     return sentences
+
 
 # Takes a dependency graph and a given rel, like s_dep and 'nsubj', and returns the word associated with it in the graph
 def get_dependency_word(dep_graph, rel):
@@ -93,6 +132,7 @@ def get_dependency_word(dep_graph, rel):
             return word.lower()
     return None
 
+
 # Takes a dependency graph and a given rel, like s_dep and 'nsubj', and returns a complete phrase associated with it.
 # The phrase starts at the given rel and finds all of it's dependents.
 def get_dependency_phrase(dep_graph, rel):
@@ -106,10 +146,11 @@ def get_dependency_phrase(dep_graph, rel):
         return word
     for node in dep_graph.nodes.values():
         if node['rel'] == rel:
-            deps = get_dependents(node, dep_graph, visited_nodes=[])
+            deps = get_dependents(node, dep_graph, [])
             deps = sorted(deps, key=operator.itemgetter("address"))
             deps = [str(dep['word']).lower() for dep in deps]
             return " ".join(deps)
+
 
 # This function returns either story_relations, or question relations
 # The function iterates through all of the given deps to get from the keys of rel_score_dict and finds the word
@@ -136,7 +177,6 @@ def get_rel_score(question_relations, sentence_relations, q_rel, s_rel, rel_scor
 # Updated this to use dep graph to find best sentences based off of relationships between the dependencies in the
 # question and story sentences.
 def get_best_sentences(q_dep, s_dep, sentences, question_type):
-
     """
     Split question type, and find it through the dependency graph
 
@@ -145,15 +185,15 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
             Find the root word of question and sentence, then find its nmod (root's dependency') and nsubj
         If question is asking for a verb:
             Find the nsubj & nmod (overlapping ex. cheese). Follow up the leaves, and theyre dependent on the question verb
-        
+
     Who
          Find root
          Find subj dependent of that root
     Where
-        
+
 
     Why
-    
+
     """""
 
     # This creates tuples for each sentence in the story of the form [(sent1_dep, sent1_raw), (sent2_dep, sent2_raw)...]
@@ -164,18 +204,18 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
     # a match of that type in the question. So if the root of the question matches the nsubj of the sentence,
     # rel_score_dict['root'] points will be added to the sentence score.
     rel_score_dict = {
-    'root' :        3,
-    'nmod' :        2,
-    'dobj' :        2,
-    'nsubj' :       2,
-    'nsubjpass' :   2,
-    'xcomp' :       1,
-    'conj' :        1,
-    'advcl' :       1,
-    'compound' :    1,
-    'aux' :         1,
-    'case' :        1,
-    'mark' :        0
+        'root': 3,
+        'nmod': 2,
+        'dobj': 2,
+        'nsubj': 2,
+        'nsubjpass': 2,
+        'xcomp': 1,
+        'conj': 1,
+        'advcl': 1,
+        'compound': 1,
+        'aux': 1,
+        'case': 1,
+        'mark': 0
     }
 
     # Find all of the dependencies listed as keys in the rel score dict for the question and store them as a dictionary
@@ -196,7 +236,6 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
         for q_rel, q_relation in question_relations.items():
             for s_rel, s_relation in sentence_relations.items():
                 score += get_rel_score(question_relations, sentence_relations, q_rel, s_rel, rel_score_dict)
-
 
         # Extra question specific checks
 
@@ -226,8 +265,6 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
                 if mark == 'because':
                     score += 3
 
-
-
         # Add the sentence to the list of scored sentences with a final score. List contains tuples where the first val
         # is the tokenized sentence/tag tuples list, and the second val is the score of the sentence.
         # Format is a list of tuples like: [([(word1, tag1),...], 3), ([(word1, tag1),...], 2)...]
@@ -237,7 +274,6 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
     scored_sentences.sort(key=lambda x: x[1], reverse=True)
 
     return scored_sentences
-
 
 
 def matches(pattern, root):
@@ -274,12 +310,13 @@ def matches(pattern, root):
 
     return None
 
+
 # This returns who what when where why or how
 # I know for this assignment we could probably just use the first word and exclude the funtion, but I figure this will
 # keep us organized if we're later thrown questions that don't have the question word as the first word, or if there is
 # no question word in the question at all
 def get_question_type(question):
-    question_types = ['who', 'what', 'when', 'where', 'why']
+    question_types = ['who', 'what', 'when', 'where', 'why', 'how']
 
     words = nltk.word_tokenize(question['text'])
     first_word = words[0].lower()
@@ -299,6 +336,7 @@ def get_question_type(question):
 
     # How
 
+
 def get_tree_words(root):
     sent = []
     for node in root:
@@ -307,6 +345,7 @@ def get_tree_words(root):
         elif type(node) == tuple:
             sent.append(node[0])
     return sent
+
 
 # Increase precision by locating where in the best sentences the answer might be
 def get_candidates(question, story, best_sentences):
@@ -340,7 +379,8 @@ def get_candidates(question, story, best_sentences):
 
     elif question_type == 'when':
         for sent in best_sentences:
-            for pattern in ['today', 'yesterday', "o'clock", 'year', 'month', 'hour', 'minute', 'second', 'week', 'after', 'before']:
+            for pattern in ['today', 'yesterday', "o'clock", 'year', 'month', 'hour', 'minute', 'second', 'week',
+                            'after', 'before']:
                 candidates.extend(re.findall(pattern, sent[0]))
         answer = []
         answer = [word for word in candidates if word not in answer]
@@ -349,7 +389,7 @@ def get_candidates(question, story, best_sentences):
 
 
     elif question_type == 'where':
-        grammar =   """
+        grammar = """
                     N: {<PRP>|<NN.*>}
                     ADJ: {<JJ.*>}
                     NP: {<DT>? <ADJ >* <N>+}
@@ -381,14 +421,13 @@ def get_candidates(question, story, best_sentences):
                     locations = get_tree_words(locations)
                 candidates.extend(locations)
 
-
         answer = ' '.join(candidates)
         return answer
 
     elif question_type == 'why':
         for sent in best_sentences:
             found_words = []
-            for word in ['because', 'so that', 'in order to',]:
+            for word in ['because', 'so that', 'in order to', ]:
                 if word in sent[0]:
                     found_words.append(word)
             for word in found_words:
@@ -397,6 +436,108 @@ def get_candidates(question, story, best_sentences):
         return ' '.join(candidates)
 
     return ''
+
+
+def narrow_answer(q_type, q_dep, sent_dep, answer):
+    # Find root
+    q_root = find_main(q_dep)
+    sent_root = find_main(sent_dep)
+
+    # Varibles
+    q_root_word = q_root['word']
+    sent_root_word = q_root['word']
+
+    # Nsubj of Sentence dependency
+    q_nsubj_root = get_dependency_word(q_dep, 'nsubj')
+    # Dobj of Sentence Dependency
+    s_dobj_root = get_dependency_word(sent_dep, 'dobj')
+    # Subject of Sentence Dependency
+    subj_word_sent = get_dependency_word(sent_dep, 'nsubj')
+    # nmod of sentence dependency
+    sent_nmod = get_dependency_word(sent_dep, 'nmod')
+    # det of sentence dependency (ex. The )
+    sent_det = get_dependency_word(sent_dep, 'det')
+    # nmod phrase in sentence dependency
+    sent_nmod_phrase = get_dependency_phrase(sent_dep, 'nmod')
+
+    print("Sentence Root Word Is: " + sent_root_word)
+    print("Question Root Word Is: " + q_root_word)
+
+    if q_type == "who":
+
+        # Check if subj has a conjunction
+        extension = find_rel(sent_dep, subj_word_sent, 'nmod')
+        # Find nsubj
+        extension2 = get_dependency_phrase(sent_dep, 'nsubj')
+
+        # Special Case: If the Root word contains an nsubj thats not a question type. Ex: Who did the fox invite?
+
+        if q_nsubj_root and s_dobj_root and q_nsubj_root != q_type:
+            print("S_Dobj_Root: " + str(s_dobj_root))  # stork. Make it #Stork
+            # extension3 = find_rel(sent_dep, s_dobj_root, 'det')
+            extension3 = get_dependency_word(sent_dep, 'det')
+
+            if extension3 is not None:
+                answer = extension3 + " " + s_dobj_root
+            else:
+                answer = s_dobj_root
+
+            return answer
+
+        # Adds it to the answer in order
+
+        if extension2:
+            answer = extension2 + " " + subj_word_sent
+        else:
+            answer = subj_word_sent
+
+        if extension:
+            answer = answer + " " + extension + " " + subj_word_sent
+
+        return answer
+
+    elif q_type == "what":
+
+        """
+        if q_nsubj_root != q_type and q_nsubj_root:
+            #Find the last nmod to improve precision?
+            before_keyword, keyword, after_keyword = answer.partition(sent_root_word)
+            if after_keyword is not None:
+                print("After KeyWord is " + str(after_keyword))
+                answer = after_keyword
+                return answer
+            else:
+                return answer
+        """
+
+        if sent_det is not None and sent_nmod is not None:
+            answer = str(sent_det) + " " + str(sent_nmod)
+        elif sent_nmod is not None:
+            answer = sent_nmod
+
+        return answer
+
+    elif q_type == "when":
+        # Do something
+
+        return answer
+
+    elif q_type == "where":
+        # Do something
+
+        return answer
+
+    elif q_type == "why":
+        # Do something
+
+        return answer
+    elif q_type == "decision":
+        answer = "no"
+        # Either yes or no
+        return answer
+
+    return answer
+
 
 def get_answer(question, story):
     """
@@ -447,25 +588,24 @@ def get_answer(question, story):
     best_sentence_text = [word for (word, tag) in best_sentences[0][0]]
     best_sentence_score = best_sentences[0][1]
     answer = ' '.join(best_sentence_text)
-    print(answer + '\t'  + str(best_sentence_score) + '\n')
+    print(answer + '\t' + str(best_sentence_score) + " " + question['qid'] + '\n')
     chunker = nltk.RegexpParser(GRAMMAR)
     lmtzr = WordNetLemmatizer()
-    #candidates = get_candidates(question, story, best_sentences)
-    #answer = candidates
-
+    # candidates = get_candidates(question, story, best_sentences)
+    # answer = candidates
 
     # Take the top three sentences and join them together to increase recall before searching for an answer
-    #answer = [raw_sent for (raw_sent, sent, count) in best_sentences[0:1]]
-    #answer = ' '.join(answer)
-    #answer = get_sentence(best_sentences)
+    # answer = [raw_sent for (raw_sent, sent, count) in best_sentences[0:1]]
+    # answer = ' '.join(answer)
+    # answer = get_sentence(best_sentences)
+    sent_dep = best_sentences[0][2]
 
-    return answer
+    narrowed_answer = narrow_answer(question_type, q_dep, sent_dep, answer)
+    return narrowed_answer
 
+    # return answer
 
     ###     End of Your Code         ###
-
-
-
 
 
 #############################################################
@@ -483,6 +623,7 @@ def run_qa(evaluate=False):
     QA.run()
     QA.save_answers()
 
+
 #############################################################
 
 def main():
@@ -490,6 +631,7 @@ def main():
     # You can uncomment this next line to evaluate your
     # answers, or you can run score_answers.py
     score_answers()
+
 
 if __name__ == "__main__":
     main()
