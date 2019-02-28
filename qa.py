@@ -175,6 +175,8 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
     'compound' :    1,
     'aux' :         1,
     'case' :        1,
+    'cop' :         1,
+    'cc' :          1,
     'mark' :        0
     }
 
@@ -211,6 +213,7 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
 
         # Who
 
+
         # When
         if question_type == 'when':
             for time_word in TIME_NN:
@@ -223,8 +226,19 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
         if question_type == 'why':
             mark = sentence_relations['mark']
             if mark is not None:
-                if mark == 'because':
+                print("MARK PHRASE:", get_dependency_phrase(sent_graph, 'mark'))
+                if mark == 'because' or mark == 'so':
                     score += 3
+
+
+        # Decision
+        if question_type == 'decision':
+            score += 0
+
+        # How
+
+        # Which
+
 
 
 
