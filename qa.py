@@ -169,6 +169,7 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
     'dobj' :        2,
     'nsubj' :       2,
     'nsubjpass' :   2,
+    'vmod' :        1,
     'xcomp' :       1,
     'conj' :        1,
     'advcl' :       1,
@@ -176,6 +177,7 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
     'aux' :         1,
     'case' :        1,
     'cop' :         1,
+    'neg' :         1,
     'cc' :          1,
     'mark' :        0
     }
@@ -209,7 +211,7 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
         if question_type == 'where':
             for prep in LOC_PP:
                 if prep in sentence_words:
-                    score += 3
+                    score += 2
 
         # Who
 
@@ -224,11 +226,8 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
 
         # Why
         if question_type == 'why':
-            mark = sentence_relations['mark']
-            if mark is not None:
-                print("MARK PHRASE:", get_dependency_phrase(sent_graph, 'mark'))
-                if mark == 'because' or mark == 'so':
-                    score += 3
+            if 'because' in sentence_words:
+                score += 0
 
 
         # Decision
