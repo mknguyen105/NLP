@@ -68,7 +68,7 @@ def find_rel(graph, word, rel):
         if (node['word'] == word):
             # Find its rel
             if node['rel'] == rel:
-                print("Rel Matched!")
+                #print("Rel Matched!")
                 deps = get_dependents(node, graph, [])  # third parameter []
                 deps = sorted(deps + [node], key=operator.itemgetter("address"))
 
@@ -81,7 +81,7 @@ def find_rel_node(graph, iNode, rel):
         if (node  == iNode):
             # Find its rel
             if node['rel'] == rel:
-                print("Rel Matched!")
+                #print("Rel Matched!")
                 deps = get_dependents(node, graph, [])  # third parameter []
                 deps = sorted(deps + [node], key=operator.itemgetter("address"))
 
@@ -110,8 +110,68 @@ def find_node(word, graph):
             else:
                 nword = lmtzr.lemmatize(nword, 'n')
             if nword == qword:
-                print(nword)
+                #print(nword)
                 return node
+    return None
+
+def find_answer(qgraph, sgraph, rel):
+    qmain = find_main(qgraph)
+    qword = qmain["word"]
+    #print(qword)
+
+    snode = find_node(qword, sgraph)
+    #print(snode)
+
+    if snode is None:
+        for node in qgraph.nodes.values():
+            if node['rel'] == 'nsubj' or node['rel'] == 'nmod':
+                qword = node['word']
+                snode = find_node(qword, sgraph)
+                snode = sgraph.nodes[snode.get('head', None)]
+                if snode is None:
+                    smain = find_main(sgraph)
+                    snode = smain["word"]
+                print(snode)
+            else:
+                 return None
+
+    deps = []
+
+    for node in sgraph.nodes.values():
+        #print("node[head]=", node["head"])
+        if node.get('head', None) == snode["address"]:
+            if node['rel'] == rel:
+                #print(node["word"], node["rel"])
+                deps = get_dependents(node, sgraph)
+                deps = sorted(deps+[node], key=operator.itemgetter("address"))
+                return " ".join(dep["word"] for dep in deps)
+
+    # if we can't find dependents from main verb, then look at parent dependent
+    if len(deps) == 0:
+        parent_node = sgraph.nodes[snode.get('head', None)]
+        #print(parent_node)
+        if parent_node['word'] is not None:
+            for node in sgraph.nodes.values():
+                if node.get('head', None) == parent_node["address"]:
+                    if node['rel'] == rel:
+                        deps = get_dependents(node, sgraph)
+                        deps = sorted(deps+[node], key=operator.itemgetter("address"))
+                        return " ".join(dep["word"] for dep in deps)
+
+        # if we can't find dependents from parent, then look at case
+        else:
+            print("looking for case")
+            for node in sgraph.nodes.values():
+                if node['rel'] == 'case':
+                    #print(node)
+                    for item in node["deps"]:
+                        if item == rel:
+                            # print(rel)
+                            address = node["deps"][item][0]
+                            rnode = sgraph.nodes[address]
+                            deps.append(rnode)
+                            return " ".join(dep["word"] for dep in deps)
+
     return None
 
 
@@ -146,8 +206,6 @@ def get_parents(node, graph, visited_nodes, address):
 
     results = []
 
-    print("Node Address: " + str(node_address))
-
     if node in visited_nodes:
         return results
     visited_nodes.append(node)
@@ -177,13 +235,13 @@ def find_answer(qgraph, sgraph, rel):
         return None
 
     for node in sgraph.nodes.values():
-        print("node[head]=", node["head"])
+        #print("node[head]=", node["head"])
         if node["head"] == None or snode["address"] == None:
-            print()
+            #print()
             break
         elif node.get('head', None) == snode["address"]:
 
-            print(node["word"], node["rel"])
+            #print(node["word"], node["rel"])
 
             if node['rel'] == rel:
                 deps = get_dependents(node, sgraph, [])
@@ -553,15 +611,38 @@ def get_candidates(question, story, best_sentences):
 
     return ''
 
-def compare(nodes, dep):
+
+
+def compare(nodes, dep, nodes2, dep2):
     count = 0
+    count2 = 0
+
     for node in nodes:
         for graph_node in dep.nodes.values():
              if graph_node['word'] == node['word']:
                  count += 1
-    return count
+
+    for node in nodes2:
+        for graph_node in dep2.nodes.values():
+            if graph_node['word'] == node['word']:
+                count2 += 1
+
+    if count > count2:
+        return True
+    else:
+        return False
 
 
+def compare_word(word, nodes):
+
+
+    for graph_node in nodes:
+        #print("Graph_Node['word']:" + str(graph_node['word']))
+        graph_word = graph_node['word']
+        if graph_word is not None and word is not None:
+            if graph_word.lower() == word.lower():
+                return True
+    return False
 
 
 
@@ -571,8 +652,9 @@ def narrow_answer(q_type, q_dep, sent_dep, answer):
     sent_root = find_main(sent_dep)
 
     # Varibles
-    q_root_word = q_root['word']
-    sent_root_word = q_root['word']
+    lmtzr = WordNetLemmatizer()
+    q_root_word = lmtzr.lemmatize(q_root['word'], 'v')
+    sent_root_word = lmtzr.lemmatize(sent_root['word'], 'v')
 
     # Nsubj of Sentence dependency
     q_nsubj_root = get_dependency_word(q_dep, 'nsubj')
@@ -584,8 +666,13 @@ def narrow_answer(q_type, q_dep, sent_dep, answer):
     sent_nmod = get_dependency_word(sent_dep, 'nmod')
     # det of sentence dependency (ex. The )
     sent_det = get_dependency_word(sent_dep, 'det')
+
     # nmod phrase in sentence dependency
     sent_nmod_phrase = get_dependency_phrase(sent_dep, 'nmod')
+    # dobj phrase in sentence dependency
+    sent_dobj_phrase = get_dependency_phrase(sent_dep, 'dobj')
+    # nsubj phrase in sentence dependency
+    sent_nsubj_phrase = get_dependency_phrase(sent_dep, 'nsubj')
 
     print("Sentence Root Word Is: " + sent_root_word)
     print("Question Root Word Is: " + q_root_word)
@@ -629,48 +716,53 @@ def narrow_answer(q_type, q_dep, sent_dep, answer):
 
         nsubj_node = get_dependency_node(sent_dep, 'nsubj')
 
-        #If its a subject, return its object. Vice versa
-        main_node = find_main(sent_dep)
-        #main_node = find_main(q_dep)
-        #main_node = sent_root_word
-
-        if main_node is not None:
-
-            print("Sentence Main Node: " + str(main_node['word']))
+        #Sent_root_word
+        if sent_root is not None:
 
             answer = ""
 
-            #Object
-            s_dependents_root = get_dependents(main_node, sent_dep, [])
+            #Gets the dependents of the queston root. Check overlap of the nsubj, nmod, dobj
+            #If it overlaps, don't use that (If its in the question, its not in the answer)
 
-            #Subject
-            s_parents_root = get_parents(main_node, sent_dep, [], main_node['address'])
+            q_dependents_root = get_dependents(q_root, sent_dep, [])
+            print("Subject Word Sentence Is: " + str(subj_word_sent))
+            if compare_word(subj_word_sent, q_dependents_root) is False and sent_nsubj_phrase is not None:
+                print("Answer is NSUBJ")
 
-
-            #If the question has the noun subject in its question
-
-            if compare(s_dependents_root, q_dep) > 0:
-
-                deps = sorted(s_dependents_root, key=operator.itemgetter("address"))
-                for dep in deps:
-                    answer = answer + " " + dep['word']
-
-                if sent_nmod is not None:
-                    answer = answer + " " + str(sent_nmod)
-
+                answer = str(sent_nsubj_phrase)
+                return answer
+            elif compare_word(s_dobj_root, q_dependents_root) is False and sent_nmod_phrase is not None:
+                print("Answer is NMOD")
+                answer = str(sent_nmod_phrase)
+                return answer
+            elif compare_word(sent_nmod, q_dependents_root) is True and sent_dobj_phrase is not None:
+                print("Answer is DOBJ")
+                #DOBJ Works
+                answer = str(sent_dobj_phrase)
+                return answer
             else:
+                answer = str(sent_dobj_phrase)
+                return answer
 
-                #Perhaps have separated cases depending on what its asking
-                deps = sorted(s_parents_root, key=operator.itemgetter("address"))
-                for dep in deps:
-                    answer = answer + " " + dep['word']
+            """
+            if compare_word(subj_word_sent, q_dep) is False and sent_nsubj_phrase is not None:
+                print("Answer is NSUBJ")
 
-
+                answer = str(sent_nsubj_phrase)
+                return answer
+            elif compare_word(s_dobj_root, q_dep) is False and sent_nmod_phrase is not None:
+                print("Answer is NMOD")
+                answer = str(sent_nmod_phrase)
+                return answer
+            elif compare_word(sent_nmod, q_dep) is True and sent_dobj_phrase is not None:
+                print("Answer is DOBJ")
+                answer = str(sent_dobj_phrase)
+                return answer
+            else:
                 if sent_nmod is not None:
-                    answer = answer + " " + str(sent_nmod)
-
-
-
+                    answer = str(sent_nmod)
+                return answer
+            """
 
         print("Answer is " + answer)
 
