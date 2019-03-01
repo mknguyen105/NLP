@@ -204,18 +204,24 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
     # a match of that type in the question. So if the root of the question matches the nsubj of the sentence,
     # rel_score_dict['root'] points will be added to the sentence score.
     rel_score_dict = {
-        'root': 3,
-        'nmod': 2,
-        'dobj': 2,
-        'nsubj': 2,
-        'nsubjpass': 2,
-        'xcomp': 1,
-        'conj': 1,
-        'advcl': 1,
-        'compound': 1,
-        'aux': 1,
-        'case': 1,
-        'mark': 0
+
+    'root' :        3,
+    'nmod' :        2,
+    'dobj' :        2,
+    'nsubj' :       2,
+    'nsubjpass' :   2,
+    'vmod' :        1,
+    'xcomp' :       1,
+    'conj' :        1,
+    'advcl' :       1,
+    'compound' :    1,
+    'aux' :         1,
+    'case' :        1,
+    'cop' :         1,
+    'neg' :         1,
+    'cc' :          1,
+    'mark' :        0
+
     }
 
     # Find all of the dependencies listed as keys in the rel score dict for the question and store them as a dictionary
@@ -246,9 +252,10 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
         if question_type == 'where':
             for prep in LOC_PP:
                 if prep in sentence_words:
-                    score += 3
+                    score += 2
 
         # Who
+
 
         # When
         if question_type == 'when':
@@ -260,10 +267,18 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
 
         # Why
         if question_type == 'why':
-            mark = sentence_relations['mark']
-            if mark is not None:
-                if mark == 'because':
-                    score += 3
+            if 'because' in sentence_words:
+                score += 0
+
+
+        # Decision
+        if question_type == 'decision':
+            score += 0
+
+        # How
+
+        # Which
+
 
         # Add the sentence to the list of scored sentences with a final score. List contains tuples where the first val
         # is the tokenized sentence/tag tuples list, and the second val is the score of the sentence.
@@ -316,12 +331,15 @@ def matches(pattern, root):
 # keep us organized if we're later thrown questions that don't have the question word as the first word, or if there is
 # no question word in the question at all
 def get_question_type(question):
-    question_types = ['who', 'what', 'when', 'where', 'why', 'how']
+
+    question_types = ['who', 'what', 'when', 'where', 'why', 'how', 'which']
 
     words = nltk.word_tokenize(question['text'])
     first_word = words[0].lower()
     if first_word in question_types:
         return first_word
+    else:
+        return 'decision'
 
     # Add other methods of detecting question type to cover it not being first word
     # Who
