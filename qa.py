@@ -3,6 +3,7 @@ from qa_engine.score_answers import main as score_answers
 from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.stem.snowball import SnowballStemmer
 from nltk.corpus import wordnet as wn
+import dependency_stub
 
 import nltk
 
@@ -574,12 +575,63 @@ def narrow_answer(q_type, q_dep, sent_dep, answer):
         return answer
 
     elif q_type == "when":
+        answer = dependency_stub.find_answer(q_dep, sent_dep, "nmod")
+        if not answer:
+            answer = dependency_stub.find_answer(q_dep, sent_dep, "nmod:tmod")
+        if not answer:
+            answer = dependency_stub.find_answer(q_dep, sent_dep, "advmod")
+        if not answer:
+            #answer = find_main(sent_dep)
+            #answer = answer['word']
+            deps = []
+            node = find_main(sent_dep)
+            deps.append(node)
+            for item in node["deps"]:
+                if item == 'compound' or item == 'det' or item == 'amod':
+                    address = node["deps"][item][0]
+                    rnode = sent_dep.nodes[address]
+                    deps.append(rnode)
+                    deps = sorted(deps, key=operator.itemgetter("address"))
+            answer = " ".join(dep["word"] for dep in deps)
 
         return answer
 
     elif q_type == "where":
-        # Do something
+        answer = dependency_stub.find_answer(q_dep, sent_dep, "nmod")
+        if not answer:
+            answer = dependency_stub.find_answer(q_dep, sent_dep, "nmod:poss")
+        if not answer:
+            answer = dependency_stub.find_answer(q_dep, sent_dep, "dobj")
+        if not answer:
+            deps = []
+            node = find_main(sent_dep)
+            deps.append(node)
+            for item in node["deps"]:
+                if item == 'compound' or item == 'det' or item == 'amod':
+                    address = node["deps"][item][0]
+                    rnode = sent_dep.nodes[address]
+                    deps.append(rnode)
+                    deps = sorted(deps, key=operator.itemgetter("address"))
+            answer = " ".join(dep["word"] for dep in deps)
 
+        return answer
+
+    elif q_type == "which":
+        answer = dependency_stub.find_answer(q_dep, sent_dep, "nsubj")
+        if not answer:
+            answer = dependency_stub.find_answer(q_dep, sent_dep, "nmod")
+        if not answer:
+            deps = []
+            node = find_main(sent_dep)
+            deps.append(node)
+            for item in node["deps"]:
+                if item == 'compound' or item == 'det' or item == 'amod':
+                    address = node["deps"][item][0]
+                    rnode = sent_dep.nodes[address]
+                    deps.append(rnode)
+                    deps = sorted(deps, key=operator.itemgetter("address"))
+            answer = " ".join(dep["word"] for dep in deps)
+        
         return answer
 
     elif q_type == 'how':
