@@ -33,6 +33,33 @@ def find_main(graph):
             return node
     return None
 
+def get_node_parent_siblings(node, graph):
+    parent_address = node['head']
+    parent = graph.nodes[parent_address]
+    nodes = get_dependents(parent, graph, [])
+    return nodes
+
+def get_node_depth(node, graph):
+    depth = 0
+    if node['rel'] == 'root':
+        return 0
+    parent_address = node['head']
+    parent = graph.nodes[parent_address]
+    return 1 + get_node_depth(parent, graph)
+
+
+
+# Takes a list of nodes from a dependency graph and returns the words from the tree in order
+def get_subtree_phrase(node_list):
+    # Sort the list by address
+    sorted_nodes = sorted(node_list, key=operator.itemgetter('address'))
+
+    # Join the words from each node
+    words = []
+    for node in sorted_nodes:
+        words.append(node['word'])
+    phrase = ' '.join(words)
+    return phrase
 
 def find_rel(graph, word, rel):
     for node in graph.nodes.values():
@@ -45,6 +72,14 @@ def find_rel(graph, word, rel):
 
                 return " ".join(dep["word"] for dep in deps)
     return None
+
+# Finds the nodes with the given relation in a graph
+def find_node_rel(rel, graph):
+    nodes = []
+    for node in graph.nodes.values():
+        if node['rel'] == rel:
+            nodes.append(node)
+    return nodes if len(nodes) > 0 else None
 
 
 def find_node(word, graph):
@@ -71,6 +106,8 @@ def get_dependents(node, graph, visited_nodes):  # visitednodes
 
     if node in visited_nodes:
         return results
+    if len(visited_nodes) == 0:
+        results.append(node)
     visited_nodes.append(node)
     for item in node["deps"]:
         visited_nodes.append(item)
@@ -547,10 +584,48 @@ def narrow_answer(q_type, q_dep, sent_dep, answer):
 
     elif q_type == "why":
         # Do something
+        node = find_node('because', sent_dep)
+        if node is not None:
+            node_fam = get_node_parent_siblings(node, sent_dep)
+            answer = get_subtree_phrase(node_fam)
+            conj = find_node_rel('conj', sent_dep)
+            cc = find_node_rel('cc', sent_dep)
+            #if cc is not None:
+            #    phrase = get_dependency_phrase(sent_dep, 'cc')
+            #    answer += ' ' + phrase
+            #if conj is not None:
+            #    phrase = get_dependency_phrase(sent_dep, 'conj')
+            #    answer += ' ' + phrase
+
+        else:
+            marks = find_node_rel('mark', sent_dep)
+            answer = ''
+            if len(marks) > 1:
+                #min_depth = 1000000
+                #shallow_node = None
+                nodes = []
+                for mark in marks:
+                # Depth solution doesn't work due to incorrect parse tree
+                    #depth = get_node_depth(mark, sent_dep)
+                    #if min_depth < depth:
+                    #   min_depth = depth
+                    #   shallow_node = mark
+
+                    # Hard coding best solution with current code setup and bad parse
+                    if mark['word'] != 'while':
+                        nodes.extend(get_node_parent_siblings(mark, sent_dep))
+                        answer = get_subtree_phrase(nodes)
+
+
+            elif len(marks) == 1:
+                node_fam = get_node_parent_siblings(marks[0], sent_dep)
+                answer = get_subtree_phrase(node_fam)
+
+            return answer
 
         return answer
     elif q_type == "decision":
-        answer = "no"
+        answer = "yes no"
         # Either yes or no
         return answer
 
@@ -591,7 +666,6 @@ def get_answer(question, story):
 
     ###     Your Code Goes Here         ###
     """
-
     if question['type'] == "Story":
         sentences = get_sentences(story['text'])
         s_dep = story['story_dep']
