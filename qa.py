@@ -3,6 +3,7 @@ from qa_engine.score_answers import main as score_answers
 from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.stem.snowball import SnowballStemmer
 from nltk.corpus import wordnet as wn
+import dependency_stub
 
 import nltk
 
@@ -23,7 +24,8 @@ GRAMMAR = """
 LOC_PP = set(["in", "on", "at", "behind", "below", "beside", "above", "across", "along", "below", "between", "under",
               "near", "inside"])
 TIME_NN = set(
-    ['today', 'yesterday', "o'clock", 'pm', 'year', 'month', 'hour', 'minute', 'second', 'week', 'after', 'before'])
+    ['today', 'yesterday', "o'clock", 'pm', 'year', 'month', 'hour', 'minute', 'second', 'week', 'after', 'before',
+     'saturday', 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'day', 'time'])
 
 
 # From dep demo ********************************************************************************************************
@@ -33,6 +35,33 @@ def find_main(graph):
             return node
     return None
 
+def get_node_parent_siblings(node, graph):
+    parent_address = node['head']
+    parent = graph.nodes[parent_address]
+    nodes = get_dependents(parent, graph, [])
+    return nodes
+
+def get_node_depth(node, graph):
+    depth = 0
+    if node['rel'] == 'root':
+        return 0
+    parent_address = node['head']
+    parent = graph.nodes[parent_address]
+    return 1 + get_node_depth(parent, graph)
+
+
+
+# Takes a list of nodes from a dependency graph and returns the words from the tree in order
+def get_subtree_phrase(node_list):
+    # Sort the list by address
+    sorted_nodes = sorted(node_list, key=operator.itemgetter('address'))
+
+    # Join the words from each node
+    words = []
+    for node in sorted_nodes:
+        words.append(node['word'])
+    phrase = ' '.join(words)
+    return phrase
 
 def find_rel(graph, word, rel):
     for node in graph.nodes.values():
@@ -46,6 +75,7 @@ def find_rel(graph, word, rel):
                 return " ".join(dep["word"] for dep in deps)
     return None
 
+
 def find_rel_node(graph, iNode, rel):
     for node in graph.nodes.values():
         if (node  == iNode):
@@ -57,6 +87,15 @@ def find_rel_node(graph, iNode, rel):
 
                 return " ".join(dep["word"] for dep in deps)
     return None
+
+# Finds the nodes with the given relation in a graph
+def find_node_rel(rel, graph):
+    nodes = []
+    for node in graph.nodes.values():
+        if node['rel'] == rel:
+            nodes.append(node)
+    return nodes if len(nodes) > 0 else None
+
 
 
 def find_node(word, graph):
@@ -85,6 +124,8 @@ def get_dependents(node, graph, visited_nodes):  # visitednodes
 
     if node in visited_nodes:
         return results
+    if len(visited_nodes) == 0:
+        results.append(node)
     visited_nodes.append(node)
 
     #Checks in case of nothing
@@ -637,21 +678,136 @@ def narrow_answer(q_type, q_dep, sent_dep, answer):
         return answer
 
     elif q_type == "when":
-        # Do something
+        answer = dependency_stub.find_answer(q_dep, sent_dep, "nmod")
+        if not answer:
+            answer = dependency_stub.find_answer(q_dep, sent_dep, "nmod:tmod")
+        if not answer:
+            answer = dependency_stub.find_answer(q_dep, sent_dep, "advmod")
+        if not answer:
+            #answer = find_main(sent_dep)
+            #answer = answer['word']
+            deps = []
+            node = find_main(sent_dep)
+            deps.append(node)
+            for item in node["deps"]:
+                if item == 'compound' or item == 'det' or item == 'amod':
+                    address = node["deps"][item][0]
+                    rnode = sent_dep.nodes[address]
+                    deps.append(rnode)
+                    deps = sorted(deps, key=operator.itemgetter("address"))
+            answer = " ".join(dep["word"] for dep in deps)
 
         return answer
 
     elif q_type == "where":
-        # Do something
+        answer = dependency_stub.find_answer(q_dep, sent_dep, "nmod")
+        if not answer:
+            answer = dependency_stub.find_answer(q_dep, sent_dep, "nmod:poss")
+        if not answer:
+            answer = dependency_stub.find_answer(q_dep, sent_dep, "dobj")
+        if not answer:
+            deps = []
+            node = find_main(sent_dep)
+            deps.append(node)
+            for item in node["deps"]:
+                if item == 'compound' or item == 'det' or item == 'amod':
+                    address = node["deps"][item][0]
+                    rnode = sent_dep.nodes[address]
+                    deps.append(rnode)
+                    deps = sorted(deps, key=operator.itemgetter("address"))
+            answer = " ".join(dep["word"] for dep in deps)
+
+        return answer
+
+    elif q_type == "which":
+        answer = dependency_stub.find_answer(q_dep, sent_dep, "nsubj")
+        if not answer:
+            answer = dependency_stub.find_answer(q_dep, sent_dep, "nmod")
+        if not answer:
+            deps = []
+            node = find_main(sent_dep)
+            deps.append(node)
+            for item in node["deps"]:
+                if item == 'compound' or item == 'det' or item == 'amod':
+                    address = node["deps"][item][0]
+                    rnode = sent_dep.nodes[address]
+                    deps.append(rnode)
+                    deps = sorted(deps, key=operator.itemgetter("address"))
+            answer = " ".join(dep["word"] for dep in deps)
+        
+        return answer
+
+    elif q_type == 'how':
+        advmod = get_dependency_word(sent_dep, 'advmod')
+        nmod = get_dependency_phrase(sent_dep, 'nmod')
+
+        # If there is an advmod, use that as the answer
+        if advmod is not None:
+            answer = advmod
+        # A variation of the below solution will probably scale better, but doesn't work well for this question
+        #if get_dependency_word(sent_dep, 'advmod') is not None:
+        #    answer = get_dependency_phrase(sent_dep, 'advmod')
+
+        # Second choice is to use the nmod if it exists
+        elif nmod is not None:
+            answer = nmod
+
+        # Take the section from the root to the far right of sentence if nothing else
+        else:
+            sent_nodes = [node for node in sent_dep.nodes.values() if node['word'] is not None]
+            sent_words = get_subtree_phrase(sent_nodes)
+            sent_words = sent_words.split(' ')
+            root_index = find_main(sent_dep)['address'] + 1
+            answer = sent_words[root_index:]
+            answer = ' '.join(answer)
+
 
         return answer
 
     elif q_type == "why":
         # Do something
+        node = find_node('because', sent_dep)
+        if node is not None:
+            node_fam = get_node_parent_siblings(node, sent_dep)
+            answer = get_subtree_phrase(node_fam)
+            conj = find_node_rel('conj', sent_dep)
+            cc = find_node_rel('cc', sent_dep)
+            #if cc is not None:
+            #    phrase = get_dependency_phrase(sent_dep, 'cc')
+            #    answer += ' ' + phrase
+            #if conj is not None:
+            #    phrase = get_dependency_phrase(sent_dep, 'conj')
+            #    answer += ' ' + phrase
+
+        else:
+            marks = find_node_rel('mark', sent_dep)
+            answer = ''
+            if len(marks) > 1:
+                #min_depth = 1000000
+                #shallow_node = None
+                nodes = []
+                for mark in marks:
+                # Depth solution doesn't work due to incorrect parse tree
+                    #depth = get_node_depth(mark, sent_dep)
+                    #if min_depth < depth:
+                    #   min_depth = depth
+                    #   shallow_node = mark
+
+                    # Hard coding best solution with current code setup and bad parse
+                    if mark['word'] != 'while':
+                        nodes.extend(get_node_parent_siblings(mark, sent_dep))
+                        answer = get_subtree_phrase(nodes)
+
+
+            elif len(marks) == 1:
+                node_fam = get_node_parent_siblings(marks[0], sent_dep)
+                answer = get_subtree_phrase(node_fam)
+
+            return answer
 
         return answer
     elif q_type == "decision":
-        answer = "no"
+        answer = "yes no"
         # Either yes or no
         return answer
     elif q_type == "which":
@@ -696,7 +852,6 @@ def get_answer(question, story):
 
     ###     Your Code Goes Here         ###
     """
-
     if question['type'] == "Story":
         sentences = get_sentences(story['text'])
         s_dep = story['story_dep']
