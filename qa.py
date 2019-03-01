@@ -23,7 +23,8 @@ GRAMMAR = """
 LOC_PP = set(["in", "on", "at", "behind", "below", "beside", "above", "across", "along", "below", "between", "under",
               "near", "inside"])
 TIME_NN = set(
-    ['today', 'yesterday', "o'clock", 'pm', 'year', 'month', 'hour', 'minute', 'second', 'week', 'after', 'before'])
+    ['today', 'yesterday', "o'clock", 'pm', 'year', 'month', 'hour', 'minute', 'second', 'week', 'after', 'before',
+     'saturday', 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'day', 'time'])
 
 
 # From dep demo ********************************************************************************************************
@@ -573,12 +574,38 @@ def narrow_answer(q_type, q_dep, sent_dep, answer):
         return answer
 
     elif q_type == "when":
-        # Do something
 
         return answer
 
     elif q_type == "where":
         # Do something
+
+        return answer
+
+    elif q_type == 'how':
+        advmod = get_dependency_word(sent_dep, 'advmod')
+        nmod = get_dependency_phrase(sent_dep, 'nmod')
+
+        # If there is an advmod, use that as the answer
+        if advmod is not None:
+            answer = advmod
+        # A variation of the below solution will probably scale better, but doesn't work well for this question
+        #if get_dependency_word(sent_dep, 'advmod') is not None:
+        #    answer = get_dependency_phrase(sent_dep, 'advmod')
+
+        # Second choice is to use the nmod if it exists
+        elif nmod is not None:
+            answer = nmod
+
+        # Take the section from the root to the far right of sentence if nothing else
+        else:
+            sent_nodes = [node for node in sent_dep.nodes.values() if node['word'] is not None]
+            sent_words = get_subtree_phrase(sent_nodes)
+            sent_words = sent_words.split(' ')
+            root_index = find_main(sent_dep)['address'] + 1
+            answer = sent_words[root_index:]
+            answer = ' '.join(answer)
+
 
         return answer
 
