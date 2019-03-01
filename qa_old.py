@@ -124,3 +124,130 @@ def get_best_sentences(question, story):
 
     # Return the list of sentence tuples from above
     return best_sentences
+
+
+
+
+# Increase precision by locating where in the best sentences the answer might be
+def get_candidates(question, story, best_sentences):
+    candidates = []
+    question_type = get_question_type(question)
+    qverb = get_verb(question)
+    qsub = find_subjects(question['dep'])
+    qwords = nltk.word_tokenize(question['text'])
+    qtags = nltk.pos_tag(qwords)
+    story_subjects = find_subjects(story['story_dep'])
+    lmtzr = WordNetLemmatizer()
+
+    if question_type == 'who':
+        possible_answers = story_subjects
+        answer = ''
+        if type(qsub) == list and len(qsub) > 0:
+            if qsub[0] == 'story':
+                answer = 'A ' + story_subjects[0]
+                for subj in story_subjects[1:]:
+                    answer += ' and a ' + subj
+        else:
+            return ' '.join(story_subjects)
+        return answer
+
+
+    elif question_type == 'what':
+
+        answer = [raw_sent for (raw_sent, sent, count) in best_sentences[0:2]]
+        answer = ' '.join(answer)
+        return answer
+
+    elif question_type == 'when':
+        for sent in best_sentences:
+            for pattern in ['today', 'yesterday', "o'clock", 'year', 'month', 'hour', 'minute', 'second', 'week',
+                            'after', 'before']:
+                candidates.extend(re.findall(pattern, sent[0]))
+        answer = []
+        answer = [word for word in candidates if word not in answer]
+
+        return ' '.join(answer)
+
+
+    elif question_type == 'where':
+        grammar = """
+                    N: {<PRP>|<NN.*>}
+                    ADJ: {<JJ.*>}
+                    NP: {<DT>? <ADJ >* <N>+}
+                    PP: {<IN> <NP> <IN>? <NP>?}
+                    """
+        chunker = nltk.RegexpParser(grammar)
+        if len(qsub) > 0:
+            subj = lmtzr.lemmatize(qsub[0], 'n')
+        else:
+            subj = story_subjects[0]
+        verb = lmtzr.lemmatize(qverb, 'v')
+
+        for sent in best_sentences:
+
+            # If the verb and subject are in the sentence, use this solution only
+            if subj in sent[0] or verb in sent[0]:
+                tree = chunker.parse(sent[1])
+                locations = find_locations(tree)
+                if len(locations) > 0:
+                    locations = get_tree_words(locations)
+                    candidates = locations
+                    break
+
+            # If a sent isn't found where subj and verb are in the solution, use all sentences locations
+            else:
+                tree = chunker.parse(sent[1])
+                locations = find_locations(tree)
+                if len(locations) > 0:
+                    locations = get_tree_words(locations)
+                candidates.extend(locations)
+
+        answer = ' '.join(candidates)
+        return answer
+
+    elif question_type == 'why':
+        for sent in best_sentences:
+            found_words = []
+            for word in ['because', 'so that', 'in order to', ]:
+                if word in sent[0]:
+                    found_words.append(word)
+            for word in found_words:
+                index = sent[0].index(word)
+                candidates.append(sent[0][index:])
+        return ' '.join(candidates)
+
+    return ''
+
+def matches(pattern, root):
+    # Base cases to exit our recursion
+    # If both nodes are null we've matched everything so far
+    if root is None and pattern is None:
+        return root
+
+    # We've matched everything in the pattern we're supposed to (we can ignore the extra
+    # nodes in the main tree for now)
+    elif pattern is None:
+        return root
+
+    # We still have something in our pattern, but there's nothing to match in the tree
+    elif root is None:
+        return None
+
+    # A node in a tree can either be a string (if it is a leaf) or node
+    plabel = pattern if isinstance(pattern, str) else pattern.label()
+    rlabel = root if isinstance(root, str) else root.label()
+
+    # If our pattern label is the * then match no matter what
+    if plabel == "*":
+        return root
+    # Otherwise they labels need to match
+    elif plabel == rlabel:
+        # If there is a match we need to check that all the children match
+        # Minor bug (what happens if the pattern has more children than the tree)
+        for pchild, rchild in zip(pattern, root):
+            match = matches(pchild, rchild)
+            if match is None:
+                return None
+        return root
+
+    return None

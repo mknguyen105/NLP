@@ -388,40 +388,19 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
 
     return scored_sentences
 
-
-def matches(pattern, root):
-    # Base cases to exit our recursion
-    # If both nodes are null we've matched everything so far
-    if root is None and pattern is None:
-        return root
-
-    # We've matched everything in the pattern we're supposed to (we can ignore the extra
-    # nodes in the main tree for now)
-    elif pattern is None:
-        return root
-
-    # We still have something in our pattern, but there's nothing to match in the tree
-    elif root is None:
-        return None
-
-    # A node in a tree can either be a string (if it is a leaf) or node
-    plabel = pattern if isinstance(pattern, str) else pattern.label()
-    rlabel = root if isinstance(root, str) else root.label()
-
-    # If our pattern label is the * then match no matter what
-    if plabel == "*":
-        return root
-    # Otherwise they labels need to match
-    elif plabel == rlabel:
-        # If there is a match we need to check that all the children match
-        # Minor bug (what happens if the pattern has more children than the tree)
-        for pchild, rchild in zip(pattern, root):
-            match = matches(pchild, rchild)
-            if match is None:
-                return None
-        return root
-
-    return None
+def get_story_subjects(sentences, s_dep):
+    subjects = []
+    nsubjs = []
+    for sent_graph in s_dep:
+        nsubj = find_node_rel('nsubj', sent_graph)
+        if nsubj is not None:
+            nsubjs.extend(nsubj['word'])
+    for sent in sentences:
+        for word, tag in sent:
+            if tag == 'NNP':
+                if word in nsubjs:
+                    subjects.append(word)
+    return subjects
 
 
 # This returns who what when where why or how
@@ -463,96 +442,6 @@ def get_tree_words(root):
     return sent
 
 
-# Increase precision by locating where in the best sentences the answer might be
-def get_candidates(question, story, best_sentences):
-    candidates = []
-    question_type = get_question_type(question)
-    qverb = get_verb(question)
-    qsub = find_subjects(question['dep'])
-    qwords = nltk.word_tokenize(question['text'])
-    qtags = nltk.pos_tag(qwords)
-    story_subjects = find_subjects(story['story_dep'])
-    lmtzr = WordNetLemmatizer()
-
-    if question_type == 'who':
-        possible_answers = story_subjects
-        answer = ''
-        if type(qsub) == list and len(qsub) > 0:
-            if qsub[0] == 'story':
-                answer = 'A ' + story_subjects[0]
-                for subj in story_subjects[1:]:
-                    answer += ' and a ' + subj
-        else:
-            return ' '.join(story_subjects)
-        return answer
-
-
-    elif question_type == 'what':
-
-        answer = [raw_sent for (raw_sent, sent, count) in best_sentences[0:2]]
-        answer = ' '.join(answer)
-        return answer
-
-    elif question_type == 'when':
-        for sent in best_sentences:
-            for pattern in ['today', 'yesterday', "o'clock", 'year', 'month', 'hour', 'minute', 'second', 'week',
-                            'after', 'before']:
-                candidates.extend(re.findall(pattern, sent[0]))
-        answer = []
-        answer = [word for word in candidates if word not in answer]
-
-        return ' '.join(answer)
-
-
-    elif question_type == 'where':
-        grammar = """
-                    N: {<PRP>|<NN.*>}
-                    ADJ: {<JJ.*>}
-                    NP: {<DT>? <ADJ >* <N>+}
-                    PP: {<IN> <NP> <IN>? <NP>?}
-                    """
-        chunker = nltk.RegexpParser(grammar)
-        if len(qsub) > 0:
-            subj = lmtzr.lemmatize(qsub[0], 'n')
-        else:
-            subj = story_subjects[0]
-        verb = lmtzr.lemmatize(qverb, 'v')
-
-        for sent in best_sentences:
-
-            # If the verb and subject are in the sentence, use this solution only
-            if subj in sent[0] or verb in sent[0]:
-                tree = chunker.parse(sent[1])
-                locations = find_locations(tree)
-                if len(locations) > 0:
-                    locations = get_tree_words(locations)
-                    candidates = locations
-                    break
-
-            # If a sent isn't found where subj and verb are in the solution, use all sentences locations
-            else:
-                tree = chunker.parse(sent[1])
-                locations = find_locations(tree)
-                if len(locations) > 0:
-                    locations = get_tree_words(locations)
-                candidates.extend(locations)
-
-        answer = ' '.join(candidates)
-        return answer
-
-    elif question_type == 'why':
-        for sent in best_sentences:
-            found_words = []
-            for word in ['because', 'so that', 'in order to', ]:
-                if word in sent[0]:
-                    found_words.append(word)
-            for word in found_words:
-                index = sent[0].index(word)
-                candidates.append(sent[0][index:])
-        return ' '.join(candidates)
-
-    return ''
-
 def compare(nodes, dep):
     count = 0
     for node in nodes:
@@ -560,8 +449,6 @@ def compare(nodes, dep):
              if graph_node['word'] == node['word']:
                  count += 1
     return count
-
-
 
 
 
@@ -574,6 +461,10 @@ def narrow_answer(q_type, q_dep, sent_dep, answer):
     q_root_word = q_root['word']
     sent_root_word = q_root['word']
 
+    # All of the nodes in the graph in a list
+    sent_nodes = [node for node in sent_dep.nodes.values() if node['word'] is not None]
+    # The sentence in plain text
+    sent_text = get_subtree_phrase(sent_nodes)
     # Nsubj of Sentence dependency
     q_nsubj_root = get_dependency_word(q_dep, 'nsubj')
     # Dobj of Sentence Dependency
@@ -593,6 +484,7 @@ def narrow_answer(q_type, q_dep, sent_dep, answer):
         print("Sentence Subject Is: " + sent_nmod)
 
     if q_type == "who":
+
 
         # Check if subj has a conjunction
         extension = find_rel(sent_dep, subj_word_sent, 'nmod')
@@ -633,6 +525,8 @@ def narrow_answer(q_type, q_dep, sent_dep, answer):
         main_node = find_main(sent_dep)
         #main_node = find_main(q_dep)
         #main_node = sent_root_word
+
+
 
         if main_node is not None:
 
@@ -754,11 +648,9 @@ def narrow_answer(q_type, q_dep, sent_dep, answer):
 
         # Take the section from the root to the far right of sentence if nothing else
         else:
-            sent_nodes = [node for node in sent_dep.nodes.values() if node['word'] is not None]
-            sent_words = get_subtree_phrase(sent_nodes)
-            sent_words = sent_words.split(' ')
+            sent_text = sent_text.split(' ')
             root_index = find_main(sent_dep)['address'] + 1
-            answer = sent_words[root_index:]
+            answer = sent_text[root_index:]
             answer = ' '.join(answer)
 
 
@@ -861,6 +753,7 @@ def get_answer(question, story):
     q_dep = question['dep']
     question_type = get_question_type(question)
 
+   # print(get_story_subjects(sentences, s_dep))
     print(question['text'])
     best_sentences = get_best_sentences(q_dep, s_dep, sentences, question_type)
     best_sentence_text = [word for (word, tag) in best_sentences[0][0]]
