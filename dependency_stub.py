@@ -272,7 +272,7 @@ if __name__ == '__main__':
     driver = QABase()
 
     # Get the first question and its story
-    q = driver.get_question("mc500.train.18.15")
+    q = driver.get_question("mc500.train.23.9")
     story = driver.get_story(q["sid"])
     # get the dependency graph of the first question
     qgraph = q["dep"]
@@ -283,7 +283,7 @@ if __name__ == '__main__':
     # You would have to figure this out like in the chunking demo
     if q['type'] == 'story' or q['type'] == 'Story':
         stext = story['text']
-        sgraph = story["story_dep"][12]
+        sgraph = story["story_dep"][10]
     else:
         stext = story['sch']
         sgraph = story["sch_dep"][2]
