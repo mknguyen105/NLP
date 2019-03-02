@@ -781,9 +781,7 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
         return answer
 
     elif q_type == "which":
-        answer = dependency_stub.find_answer(q_dep, sent_dep, "nsubj")
-        if not answer:
-            answer = dependency_stub.find_answer(q_dep, sent_dep, "nmod")
+        answer = dependency_stub.find_who_answer(qtext, q_dep, sent_dep)
         if not answer:
             answer = dependency_stub.last_effort_answer(sent_dep)
         
