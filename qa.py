@@ -666,6 +666,7 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
 
     if q_type == "who":
         answer = dependency_stub.find_who_answer(qtext, q_dep, sent_dep)
+        
         if not answer:
             #answer = dependency_stub.last_effort_answer(sent_dep)
             # Check if subj has a conjunction

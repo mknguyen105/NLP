@@ -59,21 +59,21 @@ def find_answer(qgraph, sgraph, rel):
     print(qword)
 
     snode = find_node(qword, sgraph)
-    print(snode)
 
     # if qword is not found in sentence
     if snode is None:
+        # print(qgraph)
         for node in qgraph.nodes.values():
-            if node['rel'] == 'nsubj' or node['rel'] == 'nmod':
+            # print(node)
+            if node['rel'] == 'nsubj' or node['rel'] == 'nmod' or node['rel'] == 'dobj' and node['lemma'] not in ['who', 'what', 'when', 'where', 'why', 'how', 'which']:
                 qword = node['word']
                 snode = find_node(qword, sgraph)
-                snode = sgraph.nodes[snode.get('head', None)]
-                if snode is None:
-                    smain = find_main(sgraph)
-                    snode = smain["word"]
-                print(snode)
-            else:
-                 return None
+                #if snode is not None:
+                #    snode = sgraph.nodes[snode.get('head', None)]
+        if snode is None:
+            snode = find_main(sgraph)
+    
+    print(snode)
 
     deps = []
 
@@ -272,7 +272,7 @@ if __name__ == '__main__':
     driver = QABase()
 
     # Get the first question and its story
-    q = driver.get_question("mc500.train.23.22")
+    q = driver.get_question("mc500.train.23.17")
     story = driver.get_story(q["sid"])
     # get the dependency graph of the first question
     qgraph = q["dep"]
@@ -283,7 +283,7 @@ if __name__ == '__main__':
     # You would have to figure this out like in the chunking demo
     if q['type'] == 'story' or q['type'] == 'Story':
         stext = story['text']
-        sgraph = story["story_dep"][18]
+        sgraph = story["story_dep"][5]
     else:
         stext = story['sch']
         sgraph = story["sch_dep"][2]
@@ -305,7 +305,13 @@ if __name__ == '__main__':
     
     print(qtext)
 
-    answer = find_who_answer(qtext, qgraph, sgraph)
+    # answer = find_who_answer(qtext, qgraph, sgraph)
+
+    answer = find_answer(qgraph, sgraph, "nmod")
+    if not answer:
+        answer = find_answer(qgraph, sgraph, "nmod:poss")
+    if not answer:
+        answer = find_answer(qgraph, sgraph, "dobj")
 
     if not answer:
         answer = last_effort_answer(sgraph)
