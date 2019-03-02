@@ -105,7 +105,11 @@ def find_node(word, graph):
         ntag = node["tag"]
         nword = node["word"]
         if nword is not None:
-            if ntag.startswith("V"):
+            if nword == 'fell':
+                nword = 'fall'
+            elif nword == 'spat':
+                nword = 'spit'
+            elif ntag.startswith("V"):
                 nword = lmtzr.lemmatize(nword, 'v')
             else:
                 nword = lmtzr.lemmatize(nword, 'n')
@@ -565,7 +569,7 @@ def compare(nodes, dep):
 
 
 
-def narrow_answer(q_type, q_dep, sent_dep, answer):
+def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
     # Find root
     q_root = find_main(q_dep)
     sent_root = find_main(sent_dep)
@@ -593,7 +597,7 @@ def narrow_answer(q_type, q_dep, sent_dep, answer):
         print("Sentence Subject Is: " + sent_nmod)
 
     if q_type == "who":
-
+        '''
         # Check if subj has a conjunction
         extension = find_rel(sent_dep, subj_word_sent, 'nmod')
         # Find nsubj
@@ -622,11 +626,15 @@ def narrow_answer(q_type, q_dep, sent_dep, answer):
 
         if extension:
             answer = answer + " " + extension + " " + subj_word_sent
-
+        '''
+        answer = dependency_stub.find_who_answer(qtext, q_dep, sent_dep)
+        if not answer:
+            answer = dependency_stub.last_effort_answer(sent_dep)
+        
         return answer
 
     elif q_type == "what":
-
+        
         nsubj_node = get_dependency_node(sent_dep, 'nsubj')
 
         #If its a subject, return its object. Vice versa
@@ -670,10 +678,7 @@ def narrow_answer(q_type, q_dep, sent_dep, answer):
                     answer = answer + " " + str(sent_nmod)
 
 
-
-
         print("Answer is " + answer)
-
 
         return answer
 
@@ -684,18 +689,7 @@ def narrow_answer(q_type, q_dep, sent_dep, answer):
         if not answer:
             answer = dependency_stub.find_answer(q_dep, sent_dep, "advmod")
         if not answer:
-            #answer = find_main(sent_dep)
-            #answer = answer['word']
-            deps = []
-            node = find_main(sent_dep)
-            deps.append(node)
-            for item in node["deps"]:
-                if item == 'compound' or item == 'det' or item == 'amod':
-                    address = node["deps"][item][0]
-                    rnode = sent_dep.nodes[address]
-                    deps.append(rnode)
-                    deps = sorted(deps, key=operator.itemgetter("address"))
-            answer = " ".join(dep["word"] for dep in deps)
+            answer = dependency_stub.last_effort_answer(sent_dep)
 
         return answer
 
@@ -706,16 +700,7 @@ def narrow_answer(q_type, q_dep, sent_dep, answer):
         if not answer:
             answer = dependency_stub.find_answer(q_dep, sent_dep, "dobj")
         if not answer:
-            deps = []
-            node = find_main(sent_dep)
-            deps.append(node)
-            for item in node["deps"]:
-                if item == 'compound' or item == 'det' or item == 'amod':
-                    address = node["deps"][item][0]
-                    rnode = sent_dep.nodes[address]
-                    deps.append(rnode)
-                    deps = sorted(deps, key=operator.itemgetter("address"))
-            answer = " ".join(dep["word"] for dep in deps)
+            answer = dependency_stub.last_effort_answer(sent_dep)
 
         return answer
 
@@ -724,16 +709,7 @@ def narrow_answer(q_type, q_dep, sent_dep, answer):
         if not answer:
             answer = dependency_stub.find_answer(q_dep, sent_dep, "nmod")
         if not answer:
-            deps = []
-            node = find_main(sent_dep)
-            deps.append(node)
-            for item in node["deps"]:
-                if item == 'compound' or item == 'det' or item == 'amod':
-                    address = node["deps"][item][0]
-                    rnode = sent_dep.nodes[address]
-                    deps.append(rnode)
-                    deps = sorted(deps, key=operator.itemgetter("address"))
-            answer = " ".join(dep["word"] for dep in deps)
+            answer = dependency_stub.last_effort_answer(sent_dep)
         
         return answer
 
@@ -861,7 +837,8 @@ def get_answer(question, story):
     q_dep = question['dep']
     question_type = get_question_type(question)
 
-    print(question['text'])
+    qtext = question['text']
+    print(qtext)
     best_sentences = get_best_sentences(q_dep, s_dep, sentences, question_type)
     best_sentence_text = [word for (word, tag) in best_sentences[0][0]]
     best_sentence_score = best_sentences[0][1]
@@ -878,7 +855,7 @@ def get_answer(question, story):
     # answer = get_sentence(best_sentences)
     sent_dep = best_sentences[0][2]
 
-    narrowed_answer = narrow_answer(question_type, q_dep, sent_dep, answer)
+    narrowed_answer = narrow_answer(qtext, question_type, q_dep, sent_dep, answer)
     return narrowed_answer
 
     # return answer
