@@ -637,6 +637,7 @@ def narrow_answer(q_type, q_dep, sent_dep, answer):
     sent_nodes = [node for node in sent_dep.nodes.values() if node['word'] is not None]
     # The sentence in plain text
     sent_text = get_subtree_phrase(sent_nodes)
+
     # Nsubj of Sentence dependency
     q_nsubj_root = get_dependency_word(q_dep, 'nsubj')
     # Dobj of Sentence Dependency
@@ -696,6 +697,8 @@ def narrow_answer(q_type, q_dep, sent_dep, answer):
 
     elif q_type == "what":
 
+        #Still need to work on getting right subjects
+
         nsubj_node = get_dependency_node(sent_dep, 'nsubj')
 
         #If its a subject, return its object. Vice versa
@@ -709,9 +712,18 @@ def narrow_answer(q_type, q_dep, sent_dep, answer):
 
             answer = ""
 
+            q_vbg = get_dependency_node(q_dep, 'vbg')
+            q_vbd = get_dependency_node(q_dep, 'vbd')
+
+            if q_root_word.lower() == q_type.lower() and q_vbg is not None:
+                q_root = q_vbg
+            elif q_root_word.lower() == q_type.lower() and q_vbd is not None:
+                q_root = q_vbd
+
+
+            #If root root is question type
             #Gets the dependents of the queston root. Check overlap of the nsubj, nmod, dobj
             #If it overlaps, don't use that (If its in the question, its not in the answer)
-
             q_dependents_root = get_dependents(q_root, sent_dep, [])
             print("Subject Word Sentence Is: " + str(subj_word_sent))
             if compare_word(subj_word_sent, q_dependents_root) is False and sent_nsubj_phrase is not None:
