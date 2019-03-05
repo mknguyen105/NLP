@@ -375,6 +375,8 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
     """""
 
     # This creates tuples for each sentence in the story of the form [(sent1_dep, sent1_raw), (sent2_dep, sent2_raw)...]
+    if len(s_dep) != len(sentences):
+        sentences[2].extend(sentences.pop(3))
     graph_sent_tuples = [(s_dep[i], sentences[i]) for i in range(len(sentences))]
 
     # This is the dictionary that is used to check how many points to assign for matches between the dependency in the
@@ -838,26 +840,27 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
         else:
             marks = find_node_rel('mark', sent_dep)
             answer = ''
-            if len(marks) > 1:
-                #min_depth = 1000000
-                #shallow_node = None
-                nodes = []
-                for mark in marks:
-                # Depth solution doesn't work due to incorrect parse tree
-                    #depth = get_node_depth(mark, sent_dep)
-                    #if min_depth < depth:
-                    #   min_depth = depth
-                    #   shallow_node = mark
+            if marks is not None:
+                if len(marks) > 1:
+                    #min_depth = 1000000
+                    #shallow_node = None
+                    nodes = []
+                    for mark in marks:
+                    # Depth solution doesn't work due to incorrect parse tree
+                        #depth = get_node_depth(mark, sent_dep)
+                        #if min_depth < depth:
+                        #   min_depth = depth
+                        #   shallow_node = mark
 
-                    # Hard coding best solution with current code setup and bad parse
-                    if mark['word'] != 'while':
-                        nodes.extend(get_node_parent_siblings(mark, sent_dep))
-                        answer = get_subtree_phrase(nodes)
+                        # Hard coding best solution with current code setup and bad parse
+                        if mark['word'] != 'while':
+                            nodes.extend(get_node_parent_siblings(mark, sent_dep))
+                            answer = get_subtree_phrase(nodes)
 
 
-            elif len(marks) == 1:
-                node_fam = get_node_parent_siblings(marks[0], sent_dep)
-                answer = get_subtree_phrase(node_fam)
+                elif len(marks) == 1:
+                    node_fam = get_node_parent_siblings(marks[0], sent_dep)
+                    answer = get_subtree_phrase(node_fam)
 
             return answer
 
