@@ -818,7 +818,6 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
             answer = sent_text[root_index:]
             answer = ' '.join(answer)
 
-
         return answer
 
     elif q_type == "why":
@@ -863,13 +862,20 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
             return answer
 
         return answer
+
     elif q_type == "decision":
-        answer = "yes no"
         # Either yes or no
-        return answer
-    elif q_type == "which":
-        return answer
-    elif q_type == "how":
+
+        # check if sentence has a negative word
+        neg_words = ['never', 'not', 'no', "'nt"]
+
+        for word in neg_words:
+            node = find_node(word, sent_dep)
+            if node is not None:
+                answer = 'no'
+                return answer
+        
+        answer = "yes"
         return answer
 
     return answer
