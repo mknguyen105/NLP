@@ -2,7 +2,7 @@
 
 import re, sys, nltk, operator
 from nltk.stem.wordnet import WordNetLemmatizer
-
+from nltk.corpus import wordnet as wn
 from qa_engine.base import QABase
   
     
@@ -45,6 +45,48 @@ def get_dependents(node, graph):
     return results
 
 
+# finds lemma/hyponym/hypernym of word in sentence and returns its node
+def find_h_nyms(word, graph):
+    synsets = wn.synsets(word)
+    for synset in synsets:
+        lemmas = synset.lemma_names()
+        for lemma in lemmas:
+            print('lemma: ' + lemma)
+            node = find_node(lemma, graph)
+            if node is not None:
+                return node
+        hyponyms = synset.hyponyms()
+        for hypo in hyponyms:
+            hypo = hypo.name()[0:hypo.name().index(".")]
+            print('hypo: ' + hypo)
+            node = find_node(hypo, graph)
+            if node is not None:
+                return node
+        hypernyms = synset.hypernyms()
+        for hyper in hypernyms:
+            hyper = hyper.name()[0:hyper.name().index(".")]
+            print('hyper: ' + hyper)
+            node = find_node(hyper, graph)
+            if node is not None:
+                return node
+    return None
+
+
+# finds all hyponyms/hypernyms of words in list
+def find_all_h_nyms(wlist):
+    hlist = []
+    for word in wlist:
+        synsets = wn.synsets(word)
+        for synset in synsets:
+            hyponyms = synset.hyponyms()
+            for hypo in hyponyms:
+                hlist.append(hypo.name()[0:hypo.name().index(".")])
+            hypernyms = synset.hypernyms()
+            for hyper in hypernyms:
+                hlist.append(hyper.name()[0:hyper.name().index(".")])
+    return hlist
+
+
 def find_answer(qgraph, sgraph, rel):
     qmain = find_main(qgraph)
     qword = qmain["word"]
@@ -52,7 +94,7 @@ def find_answer(qgraph, sgraph, rel):
     # if qword is a question type
     if qword.lower() in ['who', 'what', 'when', 'where', 'why', 'how', 'which']:
         for node in qgraph.nodes.values():
-            if node['rel'] == 'nsubj' or node['rel'] == 'nmod':
+            if node['rel'] == 'nsubj' or node['rel'] == 'nmod' or node['rel'] == 'nmod':
                 qmain = node
                 qword = qmain["word"]
 
@@ -61,6 +103,12 @@ def find_answer(qgraph, sgraph, rel):
     snode = find_node(qword, sgraph)
 
     # if qword is not found in sentence
+    # find hyponym/hypernym of qword in sentence
+    if snode is None:
+        snode = find_h_nyms(qword, sgraph)
+
+    # if qword is still not found in sentence
+    # find nsubj/nmod/dobj from question in sentence
     if snode is None:
         # print(qgraph)
         for node in qgraph.nodes.values():
@@ -68,8 +116,12 @@ def find_answer(qgraph, sgraph, rel):
             if node['rel'] == 'nsubj' or node['rel'] == 'nmod' or node['rel'] == 'dobj' and node['lemma'] not in ['who', 'what', 'when', 'where', 'why', 'how', 'which']:
                 qword = node['word']
                 snode = find_node(qword, sgraph)
-                #if snode is not None:
-                #    snode = sgraph.nodes[snode.get('head', None)]
+                if snode is None:
+                    snode = find_h_nyms(qword, sgraph)
+                # if snode is found, exit for loop
+                if snode is not None:
+                    break
+                    # snode = sgraph.nodes[snode.get('head', None)]
         if snode is None:
             snode = find_main(sgraph)
     
@@ -142,6 +194,10 @@ def find_who_answer(qtext, qgraph, sgraph):
     qmain = find_main(qgraph)
     qword = qmain["word"]
 
+    qwords = nltk.word_tokenize(qtext)
+    # make sure that hyponyms/hypernyms from question not in answer
+    qwords_h = find_all_h_nyms(qwords)
+
     # loophole to answer blogs-02-15
     # remove young man from qtext, so we can get it as an answer
     if 'young man' in qtext:
@@ -151,7 +207,7 @@ def find_who_answer(qtext, qgraph, sgraph):
     # if qword is a question type
     if qword.lower() in ['who', 'what', 'when', 'where', 'why', 'how', 'which']:
         for node in qgraph.nodes.values():
-            if node['rel'] == 'nsubj' or node['rel'] == 'nmod':
+            if node['rel'] == 'nsubj' or node['rel'] == 'nmod' or node['rel'] == 'dobj':
                 qmain = node
                 qword = qmain["word"]
 
@@ -160,6 +216,12 @@ def find_who_answer(qtext, qgraph, sgraph):
     snode = find_node(qword, sgraph)
 
     # if qword is not found in sentence
+    # find hyponym/hypernym of qword in sentence
+    if snode is None:
+        snode = find_h_nyms(qword, sgraph)
+
+    # if qword is still not found in sentence
+    # find nsubj/nmod/dobj from question in sentence
     if snode is None:
         # print(qgraph)
         for node in qgraph.nodes.values():
@@ -167,8 +229,12 @@ def find_who_answer(qtext, qgraph, sgraph):
             if node['rel'] == 'nsubj' or node['rel'] == 'nmod' or node['rel'] == 'dobj' and node['lemma'] not in ['who', 'what', 'when', 'where', 'why', 'how', 'which']:
                 qword = node['word']
                 snode = find_node(qword, sgraph)
-                #if snode is not None:
-                #    snode = sgraph.nodes[snode.get('head', None)]
+                if snode is None:
+                    snode = find_h_nyms(qword, sgraph)
+                # if snode is found, exit for loop
+                if snode is not None:
+                    break
+                    # snode = sgraph.nodes[snode.get('head', None)]
         if snode is None:
             snode = find_main(sgraph)
     
@@ -177,20 +243,20 @@ def find_who_answer(qtext, qgraph, sgraph):
     deps = []
 
     for node in sgraph.nodes.values():
-        #print("node[head]=", node["head"])
+        # print("node[head]=", node["head"])
         if node.get('head', None) == snode["address"]:
-            if node['rel'] == 'nsubj' and node['word'] not in qtext:
-                #print(node["word"], node["rel"])
+            # print(node["word"], node["rel"])
+            if node['rel'] == 'nsubj' and node['word'] not in qtext and not [w for w in qwords_h if node['word'] in w]:
                 deps = get_dependents(node, sgraph)
                 deps = sorted(deps+[node], key=operator.itemgetter("address"))
                 deps = remove_case(deps)
                 return " ".join(dep["word"] for dep in deps)
-            elif node['rel'] == 'nmod' and node['word'] not in qtext:
+            elif node['rel'] == 'nmod' and node['word'] not in qtext and not [w for w in qwords_h if node['word'] in w]:
                 deps = get_dependents(node, sgraph)
                 deps = sorted(deps+[node], key=operator.itemgetter("address"))
                 deps = remove_case(deps)
                 return " ".join(dep["word"] for dep in deps)
-            elif node['rel'] == 'dobj' and node['word'] not in qtext:
+            elif node['rel'] == 'dobj' and node['word'] not in qtext and not [w for w in qwords_h if node['word'] in w]:
                 deps = get_dependents(node, sgraph)
                 deps = sorted(deps+[node], key=operator.itemgetter("address"))
                 deps = remove_case(deps)
@@ -204,24 +270,24 @@ def find_who_answer(qtext, qgraph, sgraph):
         if parent_node['word'] is not None:
             for node in sgraph.nodes.values():
                 if node.get('head', None) == parent_node["address"]:
-                    if node['rel'] == 'nsubj' and node['word'] not in qtext:
-                        #print(node["word"], node["rel"])
+                    # print(node["word"], node["rel"])
+                    if node['rel'] == 'nsubj' and node['word'] not in qtext and not [w for w in qwords_h if node['word'] in w]:
                         deps = get_dependents(node, sgraph)
                         deps = sorted(deps+[node], key=operator.itemgetter("address"))
                         deps = remove_case(deps)
                         return " ".join(dep["word"] for dep in deps)
-                    elif node['rel'] == 'nmod' and node['word'] not in qtext:
+                    elif node['rel'] == 'nmod' and node['word'] not in qtext and not [w for w in qwords_h if node['word'] in w]:
                         deps = get_dependents(node, sgraph)
                         deps = sorted(deps+[node], key=operator.itemgetter("address"))
                         deps = remove_case(deps)
                         return " ".join(dep["word"] for dep in deps)
-                    elif node['rel'] == 'dobj' and node['word'] not in qtext:
+                    elif node['rel'] == 'dobj' and node['word'] not in qtext and not [w for w in qwords_h if node['word'] in w]:
                         deps = get_dependents(node, sgraph)
                         deps = sorted(deps+[node], key=operator.itemgetter("address"))
                         deps = remove_case(deps)
                         return " ".join(dep["word"] for dep in deps)
 
-            if parent_node['rel'] == 'nsubj' or parent_node['rel'] == 'nmod' or parent_node['rel'] == 'dobj' and parent_node['word'] not in qtext:
+            if parent_node['rel'] == 'nsubj' or parent_node['rel'] == 'nmod' or parent_node['rel'] == 'dobj' and parent_node['word'] not in qtext and not [w for w in qwords_h if node['word'] in w]:
                 deps = get_dependents(parent_node, sgraph)
                 deps = sorted(deps+[parent_node], key=operator.itemgetter("address"))
                 return " ".join(dep["word"] for dep in deps)
@@ -272,7 +338,7 @@ if __name__ == '__main__':
     driver = QABase()
 
     # Get the first question and its story
-    q = driver.get_question("mc500.train.23.9")
+    q = driver.get_question("blogs-05-16")
     story = driver.get_story(q["sid"])
     # get the dependency graph of the first question
     qgraph = q["dep"]
@@ -283,15 +349,17 @@ if __name__ == '__main__':
     # You would have to figure this out like in the chunking demo
     if q['type'] == 'story' or q['type'] == 'Story':
         stext = story['text']
-        sgraph = story["story_dep"][10]
+        sgraph = story["story_dep"][6]
     else:
         stext = story['sch']
-        sgraph = story["sch_dep"][2]
+        sgraph = story["sch_dep"][6]
     
+    # print(qgraph)
     print(sgraph)
     print(stext)
     # print(q['type'])
 
+    '''
     lmtzr = WordNetLemmatizer()
     for node in sgraph.nodes.values():
         tag = node["tag"]
@@ -302,6 +370,7 @@ if __name__ == '__main__':
             else:
                 print(lmtzr.lemmatize(word, 'n'))
     print()
+    '''
     
     print(qtext)
 
