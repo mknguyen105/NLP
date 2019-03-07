@@ -462,13 +462,26 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
 
         # Add the sentence to the list of scored sentences with a final score. List contains tuples where the first val
         # is the tokenized sentence/tag tuples list, and the second val is the score of the sentence.
-        # Format is a list of tuples like: [([(word1, tag1),...], 3), ([(word1, tag1),...], 2)...]
-        scored_sentences.append((sentence, score, sent_graph))
+        # Format is a list of tuples like: [([(word1, tag1),...], 3, dep_graph), ([(word1, tag1),...], 2, dep_graph)...]
+        scored_sentences.append((sentence, sent_graph, score))
 
     # Sort the scored sentences in desc order
-    scored_sentences.sort(key=lambda x: x[1], reverse=True)
+    scored_sentences.sort(key=lambda x: x[2], reverse=True)
 
     return scored_sentences
+
+# Returns the best n sentences joined as a single string and their respective scores in a list
+def get_top_sentences(best_sentence_tuples, n):
+    sentences_text = []
+    scores = []
+    for i in range(n):
+        if i >= len(best_sentence_tuples):
+            break
+        sentence = [word.lower() for word,tag in best_sentence_tuples[i][0]]
+        sentence = ' '.join(sentence)
+        sentences_text.append(sentence)
+        scores.append(best_sentence_tuples[i][2])
+    return sentences_text, scores
 
 def get_story_subjects(sentences, s_dep):
     subjects = []
@@ -499,121 +512,6 @@ def get_question_type(question):
         return first_word
     else:
         return 'decision'
-
-    # Add other methods of detecting question type to cover it not being first word
-    # Who
-
-    # What
-
-    # When
-
-    # Where
-
-    # Why
-
-    # How
-
-
-def get_tree_words(root):
-    sent = []
-    for node in root:
-        if type(node) == nltk.Tree:
-            sent += get_tree_words(node)
-        elif type(node) == tuple:
-            sent.append(node[0])
-    return sent
-
-
-
-# Increase precision by locating where in the best sentences the answer might be
-def get_candidates(question, story, best_sentences):
-    candidates = []
-    question_type = get_question_type(question)
-    qverb = get_verb(question)
-    qsub = find_subjects(question['dep'])
-    qwords = nltk.word_tokenize(question['text'])
-    qtags = nltk.pos_tag(qwords)
-    story_subjects = find_subjects(story['story_dep'])
-    lmtzr = WordNetLemmatizer()
-
-    if question_type == 'who':
-        possible_answers = story_subjects
-        answer = ''
-        if type(qsub) == list and len(qsub) > 0:
-            if qsub[0] == 'story':
-                answer = 'A ' + story_subjects[0]
-                for subj in story_subjects[1:]:
-                    answer += ' and a ' + subj
-        else:
-            return ' '.join(story_subjects)
-        return answer
-
-
-    elif question_type == 'what':
-
-        answer = [raw_sent for (raw_sent, sent, count) in best_sentences[0:2]]
-        answer = ' '.join(answer)
-        return answer
-
-    elif question_type == 'when':
-        for sent in best_sentences:
-            for pattern in ['today', 'yesterday', "o'clock", 'year', 'month', 'hour', 'minute', 'second', 'week',
-                            'after', 'before']:
-                candidates.extend(re.findall(pattern, sent[0]))
-        answer = []
-        answer = [word for word in candidates if word not in answer]
-
-        return ' '.join(answer)
-
-
-    elif question_type == 'where':
-        grammar = """
-                    N: {<PRP>|<NN.*>}
-                    ADJ: {<JJ.*>}
-                    NP: {<DT>? <ADJ >* <N>+}
-                    PP: {<IN> <NP> <IN>? <NP>?}
-                    """
-        chunker = nltk.RegexpParser(grammar)
-        if len(qsub) > 0:
-            subj = lmtzr.lemmatize(qsub[0], 'n')
-        else:
-            subj = story_subjects[0]
-        verb = lmtzr.lemmatize(qverb, 'v')
-
-        for sent in best_sentences:
-
-            # If the verb and subject are in the sentence, use this solution only
-            if subj in sent[0] or verb in sent[0]:
-                tree = chunker.parse(sent[1])
-                locations = find_locations(tree)
-                if len(locations) > 0:
-                    locations = get_tree_words(locations)
-                    candidates = locations
-                    break
-
-            # If a sent isn't found where subj and verb are in the solution, use all sentences locations
-            else:
-                tree = chunker.parse(sent[1])
-                locations = find_locations(tree)
-                if len(locations) > 0:
-                    locations = get_tree_words(locations)
-                candidates.extend(locations)
-
-        answer = ' '.join(candidates)
-        return answer
-
-    elif question_type == 'why':
-        for sent in best_sentences:
-            found_words = []
-            for word in ['because', 'so that', 'in order to', ]:
-                if word in sent[0]:
-                    found_words.append(word)
-            for word in found_words:
-                index = sent[0].index(word)
-                candidates.append(sent[0][index:])
-        return ' '.join(candidates)
-
-    return ''
 
 
 
@@ -926,27 +824,23 @@ def get_answer(question, story):
         s_dep = story['sch_dep']
     q_dep = question['dep']
     question_type = get_question_type(question)
-
     qtext = question['text']
-    print(qtext)
+    print(qtext, '\t', question['qid'])
+
+    # Getting best sentences
     best_sentences = get_best_sentences(q_dep, s_dep, sentences, question_type)
-    best_sentence_text = [word for (word, tag) in best_sentences[0][0]]
-    best_sentence_score = best_sentences[0][1]
-    answer = ' '.join(best_sentence_text)
-    print(answer + '\t' + str(best_sentence_score) + " " + question['qid'] + '\n')
-    chunker = nltk.RegexpParser(GRAMMAR)
-    lmtzr = WordNetLemmatizer()
-    #candidates = get_candidates(question, story, best_sentences)
-    #answer = candidates
+    best_sentence_texts, best_sentence_scores = get_top_sentences(best_sentences, 5)
 
+    answer = ' '.join(best_sentence_texts)
+    for i in range(len(best_sentence_texts)):
+        print(best_sentence_texts[i], best_sentence_scores[i])
+    print('\n')
 
-    # Take the top three sentences and join them together to increase recall before searching for an answer
-    # answer = [raw_sent for (raw_sent, sent, count) in best_sentences[0:1]]
-    # answer = ' '.join(answer)
-    # answer = get_sentence(best_sentences)
-    sent_dep = best_sentences[0][2]
+    # 0 is the best sentence, 1 is the dep graph
+    sent_dep = best_sentences[0][1]
 
     narrowed_answer = narrow_answer(qtext, question_type, q_dep, sent_dep, answer)
+    narrowed_answer = ' '.join(best_sentence_texts)
     return narrowed_answer
 
     # return answer
