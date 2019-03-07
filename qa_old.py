@@ -251,3 +251,116 @@ def matches(pattern, root):
         return root
 
     return None
+
+def find_answer(qgraph, sgraph, rel):
+    qmain = find_main(qgraph)
+    qword = qmain["word"]
+    #print(qword)
+
+    snode = find_node(qword, sgraph)
+    #print(snode)
+
+    if snode is None:
+        for node in qgraph.nodes.values():
+            if node['rel'] == 'nsubj' or node['rel'] == 'nmod':
+                qword = node['word']
+                snode = find_node(qword, sgraph)
+                snode = sgraph.nodes[snode.get('head', None)]
+                if snode is None:
+                    smain = find_main(sgraph)
+                    snode = smain["word"]
+                print(snode)
+            else:
+                 return None
+
+    deps = []
+
+    for node in sgraph.nodes.values():
+        #print("node[head]=", node["head"])
+        if node.get('head', None) == snode["address"]:
+            if node['rel'] == rel:
+                #print(node["word"], node["rel"])
+                deps = get_dependents(node, sgraph)
+                deps = sorted(deps+[node], key=operator.itemgetter("address"))
+                return " ".join(dep["word"] for dep in deps)
+
+    # if we can't find dependents from main verb, then look at parent dependent
+    if len(deps) == 0:
+        parent_node = sgraph.nodes[snode.get('head', None)]
+        #print(parent_node)
+        if parent_node['word'] is not None:
+            for node in sgraph.nodes.values():
+                if node.get('head', None) == parent_node["address"]:
+                    if node['rel'] == rel:
+                        deps = get_dependents(node, sgraph)
+                        deps = sorted(deps+[node], key=operator.itemgetter("address"))
+                        return " ".join(dep["word"] for dep in deps)
+
+        # if we can't find dependents from parent, then look at case
+        else:
+            print("looking for case")
+            for node in sgraph.nodes.values():
+                if node['rel'] == 'case':
+                    #print(node)
+                    for item in node["deps"]:
+                        if item == rel:
+                            # print(rel)
+                            address = node["deps"][item][0]
+                            rnode = sgraph.nodes[address]
+                            deps.append(rnode)
+                            return " ".join(dep["word"] for dep in deps)
+
+    return None
+
+
+def find_answer(qgraph, sgraph, rel):
+    qmain = find_main(qgraph)
+    qword = qmain["word"]
+
+    snode = find_node(qword, sgraph)
+    # If snode is none, it means it couldn't find the root word
+    if snode == None:
+        return None
+
+    for node in sgraph.nodes.values():
+        #print("node[head]=", node["head"])
+        if node["head"] == None or snode["address"] == None:
+            #print()
+            break
+        elif node.get('head', None) == snode["address"]:
+
+            #print(node["word"], node["rel"])
+
+            if node['rel'] == rel:
+                deps = get_dependents(node, sgraph, [])
+                deps = sorted(deps + [node], key=operator.itemgetter("address"))
+
+                return " ".join(dep["word"] for dep in deps)
+
+
+def find_rel_node(graph, iNode, rel):
+    for node in graph.nodes.values():
+        if (node  == iNode):
+            # Find its rel
+            if node['rel'] == rel:
+                #print("Rel Matched!")
+                deps = get_dependents(node, graph, [])  # third parameter []
+                deps = sorted(deps + [node], key=operator.itemgetter("address"))
+
+                return " ".join(dep["word"] for dep in deps)
+    return None
+
+
+def get_story_subjects(sentences, s_dep):
+    subjects = []
+    nsubjs = []
+    for sent_graph in s_dep:
+        nsubj = find_node_rel('nsubj', sent_graph)
+        if nsubj is not None:
+            nsubjs.extend(nsubj['word'])
+    for sent in sentences:
+        for word, tag in sent:
+            if tag == 'NNP':
+                if word in nsubjs:
+                    subjects.append(word)
+    return subjects
