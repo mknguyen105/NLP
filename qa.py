@@ -738,6 +738,22 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
         return answer
 
     elif q_type == "what":
+
+
+
+        #Last word is a adjective #JJ What makes Alyssa happy. Alyssa was happy to spend time with her friends again.
+
+        #Last word is "with" IN
+
+        #Last word is a noun NN Asking for object
+
+        #Last word is a verb #VB Asking for a dobj
+
+        #Story Questions. Figure out a story
+
+
+
+
         #Subjects
 
         #Roots (Check if it is a question_type. If so, use find_answers
@@ -783,7 +799,7 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
                 print("Contains name")
                 return subj_word_sent
 
-            #Finding the right subject of a sentence
+            #Proceed if not found in question
             if compare_word(subj_word_sent, q_dependents_root) is False and sent_nsubj_phrase is not None:
                 print("Answer is NSUBJ")
                 answer = str(sent_nsubj_phrase)
@@ -798,6 +814,8 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
                 answer = str(sent_dobj_phrase)
                 return answer
             else:
+
+
                 print("Else Statement")
                 #answer = str(sent_dobj_phrase)
                 print("List of DOBJ")
