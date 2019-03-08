@@ -296,6 +296,15 @@ def get_list(graph, rel):
 
     return results
 
+def get_list_without_lem(graph, rel):
+    results = []
+    lmtzr = WordNetLemmatizer()
+    for node in graph.nodes.values():
+        if node['rel'] == rel:
+            word = str(node['word']).lower()
+            results.append(word)
+    return results
+
 
 
 
@@ -747,7 +756,7 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
 
             print("Sentence Main Node: " + str(main_node['word']))
 
-            answer = ""
+            #answer = ""
 
             q_vbg = get_dependency_node(q_dep, 'vbg')
             q_vbd = get_dependency_node(q_dep, 'vbd')
@@ -791,7 +800,8 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
                 print("Else Statement")
                 #answer = str(sent_dobj_phrase)
                 print("List of DOBJ")
-                dobj_list = get_list(sent_dep, 'dobj')
+                dobj_list = get_list_without_lem(sent_dep, 'dobj')
+                print(dobj_list)
 
                 if dobj_list is not None:
                     for dobj in dobj_list:
@@ -799,6 +809,8 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
                             continue
                         else:
                             answer = dobj
+                else:
+                    return answer
 
                 #Check if sent_dobj_phrase overlaps
                 return answer

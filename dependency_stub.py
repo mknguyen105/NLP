@@ -281,7 +281,7 @@ def find_who_answer(qtext, qgraph, sgraph):
                         deps = remove_case(deps)
                         return " ".join(dep["word"] for dep in deps)
 
-            if parent_node['rel'] == 'nsubj' or parent_node['rel'] == 'nmod' or parent_node['rel'] == 'dobj' and parent_node['word'] not in qtext and not [w for w in qwords_h if node['word'] in w]:
+            if parent_node['rel'] == 'nsubj' or parent_node['rel'] == 'nmod' or parent_node['rel'] == 'dobj' :#and parent_node['word'] not in qtext and not [w for w in qwords_h if node['word'] in w]:
                 deps = get_dependents(parent_node, sgraph)
                 deps = sorted(deps+[parent_node], key=operator.itemgetter("address"))
                 return " ".join(dep["word"] for dep in deps)
