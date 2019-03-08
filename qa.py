@@ -4,14 +4,11 @@ from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.stem.snowball import SnowballStemmer
 from nltk.corpus import wordnet as wn
 import dependency_stub
-
-import nltk
+import nltk, re, operator
 
 STOPWORDS = nltk.corpus.stopwords.words('english')
 
 # Our simple grammar from class (and the book)
-import nltk, re, operator
-
 GRAMMAR = """
             N: {<PRP>|<NN.*>}
             V: {<V.*>}
@@ -132,21 +129,6 @@ def get_dependents(node, graph, visited_nodes):  # visitednodes
         results.append(dep)
         results = results + get_dependents(dep, graph, visited_nodes)
         # results = results + get_dependents(dep, graph)
-
-    return results
-
-def get_parents(node, graph, visited_nodes, address):
-    node_address = node['address']
-    results = []
-    if node in visited_nodes:
-        return results
-    visited_nodes.append(node)
-
-    #Loop through graph
-    for graph_node in graph.nodes.values():
-        head_node = graph_node.get('head', None)
-        if head_node is not None and head_node == address:
-            results.append(graph_node)
 
     return results
 
@@ -643,7 +625,7 @@ def story_about(s_dep):
                 else:
                     story_char[word] = 1
     char = sorted(story_char.items(), key=operator.itemgetter(1))
-    answer = 'The ' + char[0][0] + ' and the ' + char[1][0]
+    answer = 'a ' + char[0][0] + ' and a ' + char[1][0]
     return answer
 
 

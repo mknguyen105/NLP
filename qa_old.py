@@ -432,3 +432,19 @@ def get_answer(question, story):
         if not answer:
             answer = orig_answer
 '''
+
+def get_parents(node, graph, visited_nodes, address):
+    node_address = node['address']
+    results = []
+    if node in visited_nodes:
+        return results
+    visited_nodes.append(node)
+
+    #Loop through graph
+    for graph_node in graph.nodes.values():
+        head_node = graph_node.get('head', None)
+        if head_node is not None and head_node == address:
+            results.append(graph_node)
+
+    return results
+
