@@ -55,10 +55,12 @@ if __name__ == "__main__":
     #noun_ids = pickle.load(open("Wordnet_nouns.dict", "rb"))
     #verb_ids = pickle.load(open("Wordnet_verbs.dict", "rb"))
 
+    nouns = []
     # iterate through dictionary
     for synset_id, items in noun_ids.items():
         noun = items['story_noun']
         stories = items['stories']
+        nouns.append(noun)
         # print(noun, stories)
         # get lemmas, hyponyms, hypernyms
 
@@ -87,6 +89,8 @@ if __name__ == "__main__":
             print(hypo.name()[0:hypo.name().index(".")])
             print("is hypo_synset in Wordnet_nouns/verbs.csv?")
             # match on "mouse.n.01"
+            if hypo.name()[0:hypo.name().index(".")] in nouns:
+                print('yes')
 
 
     # 'Know' is a hyponym of 'recognize' (know.v.09),
@@ -95,12 +99,17 @@ if __name__ == "__main__":
     # Question: What did the mouse know?
     # Answer: the voice of the lion
     # Sch: The mouse recognized the voice of the lion.
-    know_synsets = wn.synsets("know")
+    know_synsets = wn.synsets("try")
     print("\n'Know' synsets: %s" % know_synsets)
 
     print("'Know' hypernyms")
     for know_synset in know_synsets:
+        print(know_synset.lemma_names())
+        print(know_synset.name()[0:know_synset.name().index(".")])
         know_hyper = know_synset.hypernyms()
+        for hyper in know_hyper:
+            syn = wn.synsets(hyper.name()[0:hyper.name().index(".")])
+            print('syn: ', syn)
         print("%s: %s" % (know_synset, know_hyper))
 
     # 'Express mirth' is a lemma of 'laugh'
