@@ -374,6 +374,11 @@ def get_question_type(question):
     qgraph = question['dep']
     question_types = ['who', 'what', 'when', 'where', 'why', 'how', 'which']
 
+    qtext = []
+    for node in qgraph.nodes.values():
+        if node['word'] is not None:
+            qtext.append(node["word"])
+
     words = nltk.word_tokenize(question['text'])
     first_word = words[0].lower()
 
@@ -398,7 +403,9 @@ def get_question_type(question):
 
         # find who type questions
         last_word_rel = last_word_node['rel']
-        if last_word_rel == 'nsubj' or last_word_rel == 'nmod' or last_word_rel == 'dobj':
+        if 'do' in qtext:
+            qtype = 'what'
+        elif last_word_rel == 'nsubj' or last_word_rel == 'nmod' or last_word_rel == 'dobj':
             qtype = 'who'
 
     return qtype
