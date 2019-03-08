@@ -532,7 +532,7 @@ def get_question_type(question):
             qtype = 'when'
 
         """
-        
+        F
         # find who type questions
         last_word_rel = last_word_node['rel']
         if last_word_rel == 'nsubj' or last_word_rel == 'nmod' or last_word_rel == 'dobj' and last_word is not 'name':
