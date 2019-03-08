@@ -23,7 +23,7 @@ GRAMMAR = """
             """
 
 LOC_PP = set(["in", "on", "at", "behind", "below", "beside", "above", "across", "along", "below", "between", "under",
-              "near", "inside", "onto"])
+              "near", "inside", "onto", "after"])
 TIME_NN = set(
     ['today', 'yesterday', "o'clock", 'pm', 'year', 'month', 'hour', 'minute', 'second', 'week', 'after', 'before',
      'saturday', 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'day', 'time'])
@@ -515,6 +515,7 @@ def get_question_type(question):
         qtype = 'decision'
 
     # categorize what questions
+
     if qtype == 'what':
         # find where type questions
         last_word_node = qgraph.nodes[len(qgraph.nodes.values()) - 2]
@@ -523,15 +524,20 @@ def get_question_type(question):
         if last_word in LOC_PP:
             qtype = 'where'  
 
+
+        """
         # find when type questions
         node = find_node_rel('nmod:tmod', qgraph)
         if node is not None:
             qtype = 'when'
 
+        """
+        
         # find who type questions
         last_word_rel = last_word_node['rel']
-        if last_word_rel == 'nsubj' or last_word_rel == 'nmod' or last_word_rel == 'dobj':
+        if last_word_rel == 'nsubj' or last_word_rel == 'nmod' or last_word_rel == 'dobj' and last_word is not 'name':
             qtype = 'who'
+
 
     return qtype
 
@@ -670,6 +676,15 @@ def compare_word(word, nodes):
                 return True
     return False
 
+def remove_stopwords(string):
+    result = ""
+    words = nltk.word_tokenize(string)
+    for word in words:
+        if word not in STOPWORDS:
+            result = result + " " + word
+    return result
+
+
 def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
     # Find root
     q_root = find_main(q_dep)
@@ -706,12 +721,18 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
     # nsubj phrase in sentence dependency
     sent_nsubj_phrase = get_dependency_phrase(sent_dep, 'nsubj')
 
-    print("Sentence Root Word Is: " + sent_root_word)
+    #Everything after a root word
+    obj = remove_stopwords(answer[answer.find(sent_root['word']) + len(sent_root['word']):])
+
+
+    #print("Sentence Root Word Is: " + sent_root_word)
+    print("Sentence Root Word Is: " + sent_root['word'])
     print("Question Root Word Is: " + q_root_word)
     if sent_nmod is not None:
         print("Sentence Subject Is: " + sent_nmod)
     if q_nsubj_root is not None:
         print("Question Subject Is: " + q_nsubj_root)
+
 
     if q_type == "who":
         orig_answer = answer
@@ -750,32 +771,45 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
 
     elif q_type == "what":
 
-
-
-        #Last word is a adjective #JJ What makes Alyssa happy. Alyssa was happy to spend time with her friends again.
-
-        #Last word is "with" IN
-
-        #Last word is a noun NN Asking for object
-
-        #Last word is a verb #VB Asking for a dobj
-
-        #Story Questions. Figure out a story
-
-
-
-
-        #Subjects
-
-        #Roots (Check if it is a question_type. If so, use find_answers
-
-        #return answer
-
+        last_word_node = q_dep.nodes[len(q_dep.nodes.values()) - 2]
+        last_word = last_word_node['word']
+        last_word_rel = last_word_node['rel']
         nsubj_node = get_dependency_node(sent_dep, 'nsubj')
         main_node = find_main(sent_dep)
-
-        hypernyms_sent = wordnet_demo.find_hypernyms(main_node['word'] , sent_dep)
+        hypernyms_sent = wordnet_demo.find_hypernyms(main_node['word'], sent_dep)
         hypernyms_q = wordnet_demo.find_hypernyms(q_root['word'], q_dep)
+
+
+        print("Last_Word_Tag: " + last_word_node['tag'])
+
+        print("Sentence Subjects: " + str(sent_subjects))
+        # Finding the correct subject
+        for word in sent_subjects:
+            subj_word_sent = word
+
+        # ------ Name -------
+        if last_word_node['word'] == 'name':
+            print("Contains name")
+            return subj_word_sent
+
+        # ------ Last Word POS -------
+        if sent_dobj_phrase is not None:
+            if last_word_node['tag'] == 'JJ':
+                #Could also be a noun
+                #return sent_dobj_phrase
+                return obj
+            elif last_word_node['tag'] == 'IN':
+                return sent_dobj_phrase
+            elif last_word_node['tag'] == 'NN':
+                return sent_dobj_phrase
+                #return obj
+            elif last_word_node['tag'] == 'VB' or last_word_node['tag'] == 'VBG':
+                return sent_dobj_phrase
+        else:
+            print("Sent_DOBJ_Phrase is None")
+
+        # ----- Overlap ------
+        #Story Questions. Figure out a story
 
         if hypernyms_sent is not None: print("Hypernyms_sent:" + hypernyms_sent['word'])
         if hypernyms_q is not None: print("Hypernyms_q:" + hypernyms_q['word'])
@@ -783,8 +817,6 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
         if main_node is not None:
 
             print("Sentence Main Node: " + str(main_node['word']))
-
-            #answer = ""
 
             q_vbg = get_dependency_node(q_dep, 'vbg')
             q_vbd = get_dependency_node(q_dep, 'vbd')
@@ -794,21 +826,8 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
             elif q_root_word.lower() == q_type.lower() and q_vbd is not None:
                 q_root = q_vbd
 
-            #If it overlaps, don't use that (If its in the question, its not in the answer)
+            #If it overlaps, don't use that
             q_dependents_root = get_dependents(q_root, sent_dep, [])
-
-            print("Sentence Subjects: " + str(sent_subjects))
-            #Finding the correct subject
-            for word in sent_subjects:
-                subj_word_sent = word
-
-            #print("Sentence Subject: " + str(subj_word_sent))
-
-            #print("Q_Dependents_Root" + str(q_dependents_root))
-
-            if 'name' in qtext:
-                print("Contains name")
-                return subj_word_sent
 
             #Proceed if not found in question
             if compare_word(subj_word_sent, q_dependents_root) is False and sent_nsubj_phrase is not None:
@@ -825,7 +844,6 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
                 answer = str(sent_dobj_phrase)
                 return answer
             else:
-
 
                 print("Else Statement")
                 #answer = str(sent_dobj_phrase)
