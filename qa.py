@@ -733,7 +733,8 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
                 answer = subj_word_sent
             if extension:
                 answer = answer + " " + extension + " " + subj_word_sent
-        
+
+        print("answer: " + answer)
         return answer
 
     elif q_type == "what":
@@ -826,6 +827,7 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
         if not answer:
             answer = dependency_stub.last_effort_answer(sent_dep)
 
+        print("answer: " + answer)
         return answer
 
     elif q_type == "where":
@@ -835,15 +837,17 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
         if not answer:
             answer = dependency_stub.find_answer(q_dep, sent_dep, "dobj")
         if not answer:
-            answer = dependency_stub.last_effort_answer(sent_dep)
+            answer = dependency_stub.last_effort_where_answer(sent_dep)
 
+        print("answer: " + answer)
         return answer
 
     elif q_type == "which":
         answer = dependency_stub.find_who_answer(qtext, q_dep, sent_dep)
         if not answer:
             answer = dependency_stub.last_effort_answer(sent_dep)
-        
+
+        print("answer: " + answer)
         return answer
 
     elif q_type == 'how':
@@ -976,7 +980,7 @@ def get_answer(question, story):
     question_type = get_question_type(question)
 
     qtext = question['text']
-    print(qtext)
+    print('\n' + qtext)
     best_sentences = get_best_sentences(q_dep, s_dep, sentences, question_type)
     best_sentence_text = [word for (word, tag) in best_sentences[0][0]]
     best_sentence_score = best_sentences[0][1]
