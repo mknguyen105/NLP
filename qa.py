@@ -793,10 +793,9 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
                 print("List of DOBJ")
                 dobj_list = get_list(sent_dep, 'dobj')
 
-                
                 if dobj_list is not None:
                     for dobj in dobj_list:
-                        if dobj in qtext:
+                        if wordnet_demo.word_in_string(dobj, q_dep, qtext) is True:
                             continue
                         else:
                             answer = dobj

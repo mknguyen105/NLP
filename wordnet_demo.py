@@ -39,6 +39,22 @@ def find_hypernyms(word, graph):
                 return node
         return None
 
+def word_in_string(word, q_graph, q_text):
+    hypernym = find_hypernyms(word, q_graph)
+    hyponym = find_hyponyms(word, q_graph)
+
+    if hypernym is not None:
+        if hypernym['word'] in q_text:
+            return True
+
+    if hyponym is not None:
+        if hyponym['word'] in q_text:
+            return True
+
+    if word in q_text:
+        return True
+
+    return False
 
 
 if __name__ == "__main__":
