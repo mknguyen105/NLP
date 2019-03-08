@@ -4,6 +4,8 @@ from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.stem.snowball import SnowballStemmer
 from nltk.corpus import wordnet as wn
 import dependency_stub
+from word2vec_extractor import Word2vecExtractor
+import word_embeddings as we
 
 import nltk
 
@@ -263,7 +265,10 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
          Find root
          Find subj dependent of that root
     Where
-
+ sent1_raw), (sent2_dep, sent2_raw)...]
+    if len(s_dep) != len(sentences):
+        sentences[2].extend(sentences.pop(3))
+    graph_sent_tuples = [(s_dep[i], sentences[i]) for i in range(len(sentences))]
 
     Why
 
@@ -299,6 +304,10 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
 
     }
 
+    glove_w2v_file = "data/glove-w2v.txt"
+    W2vecextractor = Word2vecExtractor(glove_w2v_file)
+    d = we.compare_words('ignite', 'burn', W2vecextractor)
+
     # Find all of the dependencies listed as keys in the rel score dict for the question and store them as a dictionary
     # Format is {'nsubj' : 'crow', 'root': 'sit',...}
     question_relations = get_graph_rels(q_dep, rel_score_dict)
@@ -308,10 +317,14 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
     scored_sentences = []
     for sent_graph, sentence in graph_sent_tuples:
 
+
         score = 0
 
         # Find the sentence dependencies for each sentence and store in a dict just like we did for the question above
         sentence_relations = get_graph_rels(sent_graph, rel_score_dict)
+        #q_root = question_relations['root']
+        #s_root = sentence_relations['root']
+        #root_similarity = we.compare_words(q_root, s_root, W2vecextractor)
 
         # Compare the list of all different dependency relation combinations between question and story
         for q_rel, q_relation in question_relations.items():
@@ -364,6 +377,24 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
     scored_sentences.sort(key=lambda x: x[2], reverse=True)
 
     return scored_sentences
+
+def test_best(sentences, qgraph, sgraph, question_type):
+    if len(sgraph) != len(sentences):
+        sentences[2].extend(sentences.pop(3))
+    graph_sent_tuples = [(sgraph[i], sentences[i]) for i in range(len(sentences))]
+    glove_w2v_file = "data/glove-w2v.txt"
+    W2vecextractor = Word2vecExtractor(glove_w2v_file)
+
+    sent_tuples = []
+    for sgraph, sent in graph_sent_tuples:
+        q_root = find_main(qgraph)['word']
+        s_root = find_main(sgraph)['word']
+        score = we.compare_words(q_root, s_root, W2vecextractor)
+        sent_tuples.append((sent, sgraph, score))
+
+    sent_tuples.sort(key=lambda x : x[2], reverse=True)
+    return sent_tuples
+
 
 
 # Returns the best n sentences in a list and their respective scores in a list
@@ -711,7 +742,8 @@ def get_answer(question, story):
 
     # Getting best sentences
     best_sentences = get_best_sentences(q_dep, s_dep, sentences, question_type)
-    best_sentence_texts, best_sentence_scores = get_top_sentences(best_sentences, 5)
+#   best_sentences = test_best(sentences, q_dep, s_dep, question_type)
+    best_sentence_texts, best_sentence_scores = get_top_sentences(best_sentences, 3)
 
     answer = ' '.join(best_sentence_texts)
     for i in range(len(best_sentence_texts)):
@@ -721,9 +753,11 @@ def get_answer(question, story):
     # 0 is the best sentence, 1 is the dep graph
     sent_dep = best_sentences[0][1]
 
-    narrowed_answer = narrow_answer(qtext, question_type, q_dep, sent_dep, answer)
-  #  narrowed_answer = ' '.join(best_sentence_texts)
-    print(dependency_stub.find_all_h_nyms(['dog', 'cat']))
+   # narrowed_answer = narrow_answer(qtext, question_type, q_dep, sent_dep, answer)
+    narrowed_answer = ' '.join(best_sentence_texts)
+    #print(dependency_stub.find_all_h_nyms(['dog', 'cat']))
+    if question_type == 'decision':
+        narrowed_answer = 'yes no'
     return narrowed_answer
 
     # return answer

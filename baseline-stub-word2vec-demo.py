@@ -101,6 +101,11 @@ def baseline_word2vec_verb(question, sentences, stopwords, W2vecextractor, q_ver
     best_answer = (answers[0])[1]    
     return best_answer
 
+def compare_words(word1, word2, W2vecextractor):
+    word1_feat = W2vecextractor.word2v(word1)
+    word2_feat = W2vecextractor.word2v(word2)
+    dist = cosine_similarity([word1_feat], [word2_feat])
+    return dist
 
 if __name__ == '__main__':
 
