@@ -256,6 +256,17 @@ def get_rel_score(question_relations, sentence_relations, q_rel, s_rel, rel_scor
 
     return score
 
+def get_we_rel_score(question_relations, sentence_relations, rel_score_dict, W2vecextractor):
+    score = 0
+    for rel, word in question_relations.items():
+        q_word = word
+        s_word = sentence_relations[rel]
+        if q_word is not None and q_word == s_word:
+            print('Matched the', rel, '\t', q_word, 'and', s_word)
+            score += rel_score_dict[rel]
+        elif q_word is not None and s_word is not None:
+            score += rel_score_dict[rel] * we.compare_words(q_word, s_word, W2vecextractor)
+    return score
 
 # Updated this to use dep graph to find best sentences based off of relationships between the dependencies in the
 # question and story sentences.
@@ -395,12 +406,52 @@ def test_best(sentences, qgraph, sgraph, question_type):
     glove_w2v_file = "data/glove-w2v.txt"
     W2vecextractor = Word2vecExtractor(glove_w2v_file)
 
+    rel_score_dict = {
+
+        'root': 3,
+        'nmod': 3,
+        'dobj': 2,
+        'nsubj': 2,
+        'nsubjpass': 2,
+        'vmod': 1,
+        'xcomp': 1,
+        'conj': 1
+    }
+    question_relations = get_graph_rels(qgraph, rel_score_dict)
     sent_tuples = []
     for sgraph, sent in graph_sent_tuples:
-        q_root = find_main(qgraph)['word']
-        s_root = find_main(sgraph)['word']
-        score = we.compare_words(q_root, s_root, W2vecextractor)
+        score = 0
+        sentence_relations = get_graph_rels(sgraph, rel_score_dict)
+        score = get_we_rel_score(question_relations, sentence_relations, rel_score_dict, W2vecextractor)
         sent_tuples.append((sent, sgraph, score))
+
+        # Create a list holding just the lowercase words in the sentence
+        sentence_words = [word.lower() for (word, tag) in sent]
+
+        # Where
+        if question_type == 'where':
+            for prep in LOC_PP:
+                if prep in sentence_words:
+                    score += 2
+
+        # Who
+
+        # When
+        if question_type == 'when':
+            for time_word in TIME_NN:
+                if time_word.lower() in sentence_words:
+                    score += 4
+                elif 'am' in sentence_words:
+                    score += 2
+
+        # Why
+        if question_type == 'why':
+            if 'because' in sentence_words:
+                score += 2
+
+        # Decision
+        if question_type == 'decision':
+            score += 0
 
     sent_tuples.sort(key=lambda x : x[2], reverse=True)
     return sent_tuples
@@ -731,8 +782,8 @@ def get_answer(question, story):
     print(qtext, '\t', question['qid'])
 
     # Getting best sentences
-    best_sentences = get_best_sentences(q_dep, s_dep, sentences, question_type)
-#   best_sentences = test_best(sentences, q_dep, s_dep, question_type)
+    # best_sentences = get_best_sentences(q_dep, s_dep, sentences, question_type)
+    best_sentences = test_best(sentences, q_dep, s_dep, question_type)
     best_sentence_texts, best_sentence_scores = get_top_sentences(best_sentences, 1)
 
     answer = ' '.join(best_sentence_texts)
