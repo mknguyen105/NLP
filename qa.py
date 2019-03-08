@@ -722,7 +722,8 @@ def get_answer(question, story):
     sent_dep = best_sentences[0][1]
 
     narrowed_answer = narrow_answer(qtext, question_type, q_dep, sent_dep, answer)
-    narrowed_answer = ' '.join(best_sentence_texts)
+  #  narrowed_answer = ' '.join(best_sentence_texts)
+    print(dependency_stub.find_all_h_nyms(['dog', 'cat']))
     return narrowed_answer
 
     # return answer
