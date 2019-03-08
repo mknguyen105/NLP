@@ -344,7 +344,7 @@ def find_who_answer(qtext, qgraph, sgraph):
 
 
 def last_effort_answer(sgraph):
-    # if nothing works, then justt return the root of the sentence along with any compound, det, amod
+    # if nothing works, then just return the root of the sentence along with any compound, det, amod
     deps = []
     node = find_main(sgraph)
     deps.append(node)

@@ -401,3 +401,34 @@ def get_answer(question, story):
     # answer = [raw_sent for (raw_sent, sent, count) in best_sentences[0:1]]
     # answer = ' '.join(answer)
     # answer = get_sentence(best_sentences)
+
+'''
+        if not answer:
+            #answer = dependency_stub.last_effort_answer(sent_dep)
+            # Check if subj has a conjunction
+            extension = find_rel(sent_dep, subj_word_sent, 'nmod')
+            # Find nsubj
+            extension2 = get_dependency_phrase(sent_dep, 'nsubj')
+
+            # Special Case: If the Root word contains an nsubj thats not a question type. Ex: Who did the fox invite?
+            if q_nsubj_root and s_dobj_root and q_nsubj_root != q_type:
+                print("S_Dobj_Root: " + str(s_dobj_root))  # stork. Make it #Stork
+                # extension3 = find_rel(sent_dep, s_dobj_root, 'det')
+                extension3 = get_dependency_word(sent_dep, 'det')
+
+                if extension3 is not None:
+                    answer = extension3 + " " + s_dobj_root
+                else:
+                    answer = s_dobj_root
+                return answer
+
+            # Adds it to the answer in order
+            if extension2:
+                answer = extension2 + " " + subj_word_sent
+            else:
+                answer = subj_word_sent
+            if extension:
+                answer = answer + " " + extension + " " + subj_word_sent
+        if not answer:
+            answer = orig_answer
+'''

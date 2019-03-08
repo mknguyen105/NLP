@@ -467,40 +467,12 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
     if q_type == "who":
         orig_answer = answer
         answer = dependency_stub.find_who_answer(qtext, q_dep, sent_dep)
-        
-        if not answer:
-            #answer = dependency_stub.last_effort_answer(sent_dep)
-            # Check if subj has a conjunction
-            extension = find_rel(sent_dep, subj_word_sent, 'nmod')
-            # Find nsubj
-            extension2 = get_dependency_phrase(sent_dep, 'nsubj')
-
-            # Special Case: If the Root word contains an nsubj thats not a question type. Ex: Who did the fox invite?
-            if q_nsubj_root and s_dobj_root and q_nsubj_root != q_type:
-                print("S_Dobj_Root: " + str(s_dobj_root))  # stork. Make it #Stork
-                # extension3 = find_rel(sent_dep, s_dobj_root, 'det')
-                extension3 = get_dependency_word(sent_dep, 'det')
-
-                if extension3 is not None:
-                    answer = extension3 + " " + s_dobj_root
-                else:
-                    answer = s_dobj_root
-                return answer
-
-            # Adds it to the answer in order
-            if extension2:
-                answer = extension2 + " " + subj_word_sent
-            else:
-                answer = subj_word_sent
-            if extension:
-                answer = answer + " " + extension + " " + subj_word_sent
         if not answer:
             answer = orig_answer
-
+        
         return answer
 
     elif q_type == "what":
-
         nsubj_node = get_dependency_node(sent_dep, 'nsubj')
         main_node = find_main(sent_dep)
 
@@ -543,8 +515,6 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
                 print("Else Statement")
                 answer = str(sent_dobj_phrase)
                 return answer
-
-        return answer
 
     elif q_type == "when":
         answer = dependency_stub.find_answer(q_dep, sent_dep, "nmod")
@@ -661,6 +631,22 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
     return answer
 
 
+def story_about(s_dep):
+    story_char = {}
+    for sgraph in s_dep[0:1]:
+        for node in sgraph.nodes.values():
+            if node['rel'] == 'nsubj' or node['rel'] == 'dobj' or node['tag'] == 'NNP':
+                word = node['word'].lower()
+                if word in story_char:
+                    freq = story_char.get(word) + 1
+                    story_char[word] = freq
+                else:
+                    story_char[word] = 1
+    char = sorted(story_char.items(), key=operator.itemgetter(1))
+    answer = 'The ' + char[0][0] + ' and the ' + char[1][0]
+    return answer
+
+
 def get_answer(question, story):
     """
     :param question: dict
@@ -713,6 +699,12 @@ def get_answer(question, story):
     sent_dep = best_sentences[0][2]
 
     answer = narrow_answer(qtext, question_type, q_dep, sent_dep, best_sentence)
+
+    qtext_list = qtext.split()
+    # print(qtext_list)
+    if question_type.lower() == 'who' and 'about?' in qtext_list:
+        answer = story_about(s_dep)
+        
     print('answer: ' + answer)
     return answer
 
