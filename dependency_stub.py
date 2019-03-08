@@ -258,17 +258,15 @@ def find_who_answer(qtext, qgraph, sgraph):
             if node['rel'] == 'nsubj' and node['word'] not in qtext and not [w for w in qwords_h if node['word'] in w]:
                 deps = get_dependents(node, sgraph)
                 deps = sorted(deps+[node], key=operator.itemgetter("address"))
-                deps = remove_case(deps)
+                # deps = remove_case(deps)
                 return " ".join(dep["word"] for dep in deps)
             elif node['rel'] == 'nmod' and node['word'] not in qtext and not [w for w in qwords_h if node['word'] in w]:
                 deps = get_dependents(node, sgraph)
                 deps = sorted(deps+[node], key=operator.itemgetter("address"))
-                deps = remove_case(deps)
                 return " ".join(dep["word"] for dep in deps)
             elif node['rel'] == 'dobj' and node['word'] not in qtext and not [w for w in qwords_h if node['word'] in w]:
                 deps = get_dependents(node, sgraph)
                 deps = sorted(deps+[node], key=operator.itemgetter("address"))
-                deps = remove_case(deps)
                 return " ".join(dep["word"] for dep in deps)
 
     # if we can't find dependents from main verb, then look at parent dependent
@@ -283,17 +281,14 @@ def find_who_answer(qtext, qgraph, sgraph):
                     if node['rel'] == 'nsubj' and node['word'] not in qtext and not [w for w in qwords_h if node['word'] in w]:
                         deps = get_dependents(node, sgraph)
                         deps = sorted(deps+[node], key=operator.itemgetter("address"))
-                        deps = remove_case(deps)
                         return " ".join(dep["word"] for dep in deps)
                     elif node['rel'] == 'nmod' and node['word'] not in qtext and not [w for w in qwords_h if node['word'] in w]:
                         deps = get_dependents(node, sgraph)
                         deps = sorted(deps+[node], key=operator.itemgetter("address"))
-                        deps = remove_case(deps)
                         return " ".join(dep["word"] for dep in deps)
                     elif node['rel'] == 'dobj' and node['word'] not in qtext and not [w for w in qwords_h if node['word'] in w]:
                         deps = get_dependents(node, sgraph)
                         deps = sorted(deps+[node], key=operator.itemgetter("address"))
-                        deps = remove_case(deps)
                         return " ".join(dep["word"] for dep in deps)
 
             if parent_node['rel'] == 'nsubj' or parent_node['rel'] == 'nmod' or parent_node['rel'] == 'dobj' and parent_node['word'] not in qtext and not [w for w in qwords_h if node['word'] in w]:
