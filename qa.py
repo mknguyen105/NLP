@@ -705,7 +705,7 @@ def get_answer(question, story):
 
     sent_dep = best_sentences[0][2]
 
-    answer = narrow_answer(qtext, question_type, q_dep, sent_dep, answer)
+    answer = narrow_answer(qtext, question_type, q_dep, sent_dep, best_sentence)
     print('answer: ' + answer)
     return answer
 
