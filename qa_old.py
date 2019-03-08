@@ -251,3 +251,200 @@ def matches(pattern, root):
         return root
 
     return None
+
+
+def find_answer(qgraph, sgraph, rel):
+    qmain = find_main(qgraph)
+    qword = qmain["word"]
+
+    snode = find_node(qword, sgraph)
+    # If snode is none, it means it couldn't find the root word
+    if snode == None:
+        return None
+
+    for node in sgraph.nodes.values():
+        #print("node[head]=", node["head"])
+        if node["head"] == None or snode["address"] == None:
+            #print()
+            break
+        elif node.get('head', None) == snode["address"]:
+
+            #print(node["word"], node["rel"])
+
+            if node['rel'] == rel:
+                deps = get_dependents(node, sgraph, [])
+                deps = sorted(deps + [node], key=operator.itemgetter("address"))
+
+                return " ".join(dep["word"] for dep in deps)
+
+
+def find_answer2(qgraph, sgraph, rel):
+    qmain = find_main(qgraph)
+    qword = qmain["word"]
+    #print(qword)
+
+    snode = find_node(qword, sgraph)
+    #print(snode)
+
+    if snode is None:
+        for node in qgraph.nodes.values():
+            if node['rel'] == 'nsubj' or node['rel'] == 'nmod':
+                qword = node['word']
+                snode = find_node(qword, sgraph)
+                snode = sgraph.nodes[snode.get('head', None)]
+                if snode is None:
+                    smain = find_main(sgraph)
+                    snode = smain["word"]
+                print(snode)
+            else:
+                 return None
+
+    deps = []
+
+    for node in sgraph.nodes.values():
+        #print("node[head]=", node["head"])
+        if node.get('head', None) == snode["address"]:
+            if node['rel'] == rel:
+                #print(node["word"], node["rel"])
+                deps = get_dependents(node, sgraph)
+                deps = sorted(deps+[node], key=operator.itemgetter("address"))
+                return " ".join(dep["word"] for dep in deps)
+
+    # if we can't find dependents from main verb, then look at parent dependent
+    if len(deps) == 0:
+        parent_node = sgraph.nodes[snode.get('head', None)]
+        #print(parent_node)
+        if parent_node['word'] is not None:
+            for node in sgraph.nodes.values():
+                if node.get('head', None) == parent_node["address"]:
+                    if node['rel'] == rel:
+                        deps = get_dependents(node, sgraph)
+                        deps = sorted(deps+[node], key=operator.itemgetter("address"))
+                        return " ".join(dep["word"] for dep in deps)
+
+        # if we can't find dependents from parent, then look at case
+        else:
+            print("looking for case")
+            for node in sgraph.nodes.values():
+                if node['rel'] == 'case':
+                    #print(node)
+                    for item in node["deps"]:
+                        if item == rel:
+                            # print(rel)
+                            address = node["deps"][item][0]
+                            rnode = sgraph.nodes[address]
+                            deps.append(rnode)
+                            return " ".join(dep["word"] for dep in deps)
+
+    return None
+
+
+def compare(nodes, dep):
+    count = 0
+    count2 = 0
+    for node in nodes:
+        for graph_node in dep.nodes.values():
+             if graph_node['word'] == node['word']:
+                 count += 1
+    for node in nodes2:
+        for graph_node in dep2.nodes.values():
+            if graph_node['word'] == node['word']:
+                count2 += 1
+    if count > count2:
+        return True
+    else:
+        return False
+
+
+def get_node_depth(node, graph):
+    depth = 0
+    if node['rel'] == 'root':
+        return 0
+    parent_address = node['head']
+    parent = graph.nodes[parent_address]
+    return 1 + get_node_depth(parent, graph)
+
+
+def get_story_subjects(sentences, s_dep):
+    subjects = []
+    nsubjs = []
+    for sent_graph in s_dep:
+        nsubj = find_node_rel('nsubj', sent_graph)
+        if nsubj is not None:
+            nsubjs.extend(nsubj['word'])
+    for sent in sentences:
+        for word, tag in sent:
+            if tag == 'NNP':
+                if word in nsubjs:
+                    subjects.append(word)
+    return subjects
+
+
+def get_tree_words(root):
+    sent = []
+    for node in root:
+        if type(node) == nltk.Tree:
+            sent += get_tree_words(node)
+        elif type(node) == tuple:
+            sent.append(node[0])
+    return sent
+
+
+def get_answer(question, story):
+    chunker = nltk.RegexpParser(GRAMMAR)
+    lmtzr = WordNetLemmatizer()
+    #candidates = get_candidates(question, story, best_sentences)
+    #answer = candidates
+
+
+    # Take the top three sentences and join them together to increase recall before searching for an answer
+    # answer = [raw_sent for (raw_sent, sent, count) in best_sentences[0:1]]
+    # answer = ' '.join(answer)
+    # answer = get_sentence(best_sentences)
+
+'''
+        if not answer:
+            #answer = dependency_stub.last_effort_answer(sent_dep)
+            # Check if subj has a conjunction
+            extension = find_rel(sent_dep, subj_word_sent, 'nmod')
+            # Find nsubj
+            extension2 = get_dependency_phrase(sent_dep, 'nsubj')
+
+            # Special Case: If the Root word contains an nsubj thats not a question type. Ex: Who did the fox invite?
+            if q_nsubj_root and s_dobj_root and q_nsubj_root != q_type:
+                print("S_Dobj_Root: " + str(s_dobj_root))  # stork. Make it #Stork
+                # extension3 = find_rel(sent_dep, s_dobj_root, 'det')
+                extension3 = get_dependency_word(sent_dep, 'det')
+
+                if extension3 is not None:
+                    answer = extension3 + " " + s_dobj_root
+                else:
+                    answer = s_dobj_root
+                return answer
+
+            # Adds it to the answer in order
+            if extension2:
+                answer = extension2 + " " + subj_word_sent
+            else:
+                answer = subj_word_sent
+            if extension:
+                answer = answer + " " + extension + " " + subj_word_sent
+        if not answer:
+            answer = orig_answer
+'''
+
+def get_parents(node, graph, visited_nodes, address):
+    node_address = node['address']
+    results = []
+    if node in visited_nodes:
+        return results
+    visited_nodes.append(node)
+
+    #Loop through graph
+    for graph_node in graph.nodes.values():
+        head_node = graph_node.get('head', None)
+        if head_node is not None and head_node == address:
+            results.append(graph_node)
+
+    return results
+
