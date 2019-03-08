@@ -390,7 +390,7 @@ if __name__ == '__main__':
     driver = QABase()
 
     # Get the first question and its story
-    q = driver.get_question("fables-01-5")
+    q = driver.get_question("mc500.train.23.23")
     story = driver.get_story(q["sid"])
     # get the dependency graph of the first question
     qgraph = q["dep"]
@@ -401,10 +401,10 @@ if __name__ == '__main__':
     # You would have to figure this out like in the chunking demo
     if q['type'] == 'story' or q['type'] == 'Story':
         stext = story['text']
-        sgraph = story["story_dep"][0]
+        sgraph = story["story_dep"][6]
     else:
         stext = story['sch']
-        sgraph = story["sch_dep"][5]
+        sgraph = story["sch_dep"][15]
     
     # print(qgraph)
     print(sgraph)
@@ -426,8 +426,11 @@ if __name__ == '__main__':
     
     print(qtext)
 
-    # answer = find_who_answer(qtext, qgraph, sgraph)
+    # who
+    answer = find_who_answer(qtext, qgraph, sgraph)
 
+    # where
+    '''
     answer = find_answer(qgraph, sgraph, "nmod")
     if not answer:
         answer = find_answer(qgraph, sgraph, "nmod:poss")
@@ -435,6 +438,18 @@ if __name__ == '__main__':
         answer = find_answer(qgraph, sgraph, "dobj")
     if not answer:
         answer = last_effort_where_answer(sgraph)
+    '''
+
+    # when
+    '''
+    answer = find_answer(qgraph, sgraph, "nmod")
+    if not answer:
+        answer = find_answer(qgraph, sgraph, "nmod:tmod")
+    if not answer:
+        answer = find_answer(qgraph, sgraph, "advmod")
+    if not answer:
+        answer = last_effort_where_answer(sgraph)
+    '''
     
     print("answer:", answer)
 

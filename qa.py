@@ -23,7 +23,7 @@ GRAMMAR = """
             """
 
 LOC_PP = set(["in", "on", "at", "behind", "below", "beside", "above", "across", "along", "below", "between", "under",
-              "near", "inside"])
+              "near", "inside", "onto"])
 TIME_NN = set(
     ['today', 'yesterday', "o'clock", 'pm', 'year', 'month', 'hour', 'minute', 'second', 'week', 'after', 'before',
      'saturday', 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'day', 'time'])
@@ -503,28 +503,37 @@ def get_story_subjects(sentences, s_dep):
 # keep us organized if we're later thrown questions that don't have the question word as the first word, or if there is
 # no question word in the question at all
 def get_question_type(question):
-
+    qgraph = question['dep']
     question_types = ['who', 'what', 'when', 'where', 'why', 'how', 'which']
 
     words = nltk.word_tokenize(question['text'])
     first_word = words[0].lower()
+
     if first_word in question_types:
-        return first_word
+        qtype = first_word
     else:
-        return 'decision'
+        qtype = 'decision'
 
-    # Add other methods of detecting question type to cover it not being first word
-    # Who
+    # categorize what questions
+    if qtype == 'what':
+        # find where type questions
+        last_word_node = qgraph.nodes[len(qgraph.nodes.values()) - 2]
+        last_word = last_word_node['word']
+        # print('last word: ' + last_word)
+        if last_word in LOC_PP:
+            qtype = 'where'  
 
-    # What
+        # find when type questions
+        node = find_node_rel('nmod:tmod', qgraph)
+        if node is not None:
+            qtype = 'when'
 
-    # When
+        # find who type questions
+        last_word_rel = last_word_node['rel']
+        if last_word_rel == 'nsubj' or last_word_rel == 'nmod' or last_word_rel == 'dobj':
+            qtype = 'who'
 
-    # Where
-
-    # Why
-
-    # How
+    return qtype
 
 
 def get_tree_words(root):
@@ -705,6 +714,7 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
         print("Question Subject Is: " + q_nsubj_root)
 
     if q_type == "who":
+        orig_answer = answer
         answer = dependency_stub.find_who_answer(qtext, q_dep, sent_dep)
         
         if not answer:
@@ -733,8 +743,9 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
                 answer = subj_word_sent
             if extension:
                 answer = answer + " " + extension + " " + subj_word_sent
+        if not answer:
+            answer = orig_answer
 
-        print("answer: " + answer)
         return answer
 
     elif q_type == "what":
@@ -845,7 +856,6 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
         if not answer:
             answer = dependency_stub.last_effort_answer(sent_dep)
 
-        print("answer: " + answer)
         return answer
 
     elif q_type == "where":
@@ -857,7 +867,6 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
         if not answer:
             answer = dependency_stub.last_effort_where_answer(sent_dep)
 
-        print("answer: " + answer)
         return answer
 
     elif q_type == "which":
@@ -865,7 +874,6 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
         if not answer:
             answer = dependency_stub.last_effort_answer(sent_dep)
 
-        print("answer: " + answer)
         return answer
 
     elif q_type == 'how':
@@ -1017,6 +1025,7 @@ def get_answer(question, story):
     sent_dep = best_sentences[0][2]
 
     narrowed_answer = narrow_answer(qtext, question_type, q_dep, sent_dep, answer)
+    print('answer: ' + narrowed_answer)
     return narrowed_answer
 
     # return answer
