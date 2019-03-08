@@ -4,6 +4,7 @@ from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.stem.snowball import SnowballStemmer
 from nltk.corpus import wordnet as wn
 import dependency_stub
+import wordnet_demo
 
 import nltk
 
@@ -459,6 +460,9 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
 
         # Which
 
+        #What
+
+
 
         # Add the sentence to the list of scored sentences with a final score. List contains tuples where the first val
         # is the tokenized sentence/tag tuples list, and the second val is the score of the sentence.
@@ -643,6 +647,7 @@ def compare_word(word, nodes):
         #print("Graph_Node['word']:" + str(graph_node['word']))
         graph_word = graph_node['word']
         if graph_word is not None and word is not None:
+            #print("Comparing Words: " + str(word) + str(graph_word))
             if graph_word.lower() == word.lower():
                 return True
     return False
@@ -723,15 +728,27 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
         return answer
 
     elif q_type == "what":
+        #Subjects
+
+        #Roots (Check if it is a question_type. If so, use find_answers
+
+        #return answer
 
         nsubj_node = get_dependency_node(sent_dep, 'nsubj')
         main_node = find_main(sent_dep)
+
+        hypernyms_sent = wordnet_demo.find_hypernyms(main_node['word'] , sent_dep)
+        hypernyms_q = wordnet_demo.find_hypernyms(q_root['word'], q_dep)
+
+        if hypernyms_sent is not None: print("Hypernyms_sent:" + hypernyms_sent['word'])
+        if hypernyms_q is not None: print("Hypernyms_q:" + hypernyms_q['word'])
 
         if main_node is not None:
 
             print("Sentence Main Node: " + str(main_node['word']))
 
             answer = ""
+
             q_vbg = get_dependency_node(q_dep, 'vbg')
             q_vbd = get_dependency_node(q_dep, 'vbd')
 
@@ -747,6 +764,14 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
             #Finding the correct subject
             for word in sent_subjects:
                 subj_word_sent = word
+
+            #print("Sentence Subject: " + str(subj_word_sent))
+
+            #print("Q_Dependents_Root" + str(q_dependents_root))
+
+            if 'name' in qtext:
+                print("Contains name")
+                return subj_word_sent
 
             #Finding the right subject of a sentence
             if compare_word(subj_word_sent, q_dependents_root) is False and sent_nsubj_phrase is not None:
@@ -764,7 +789,19 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
                 return answer
             else:
                 print("Else Statement")
-                answer = str(sent_dobj_phrase)
+                #answer = str(sent_dobj_phrase)
+                print("List of DOBJ")
+                dobj_list = get_list(sent_dep, 'dobj')
+
+                
+                if dobj_list is not None:
+                    for dobj in dobj_list:
+                        if dobj in qtext:
+                            continue
+                        else:
+                            answer = dobj
+
+                #Check if sent_dobj_phrase overlaps
                 return answer
 
         return answer

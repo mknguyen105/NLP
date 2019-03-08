@@ -1,6 +1,7 @@
 import csv
 from collections import defaultdict
 from nltk.corpus import wordnet as wn
+import qa
 
 
 DATA_DIR = "./wordnet"
@@ -14,6 +15,30 @@ def load_wordnet_ids(filename):
     for line in csvreader:
         word_ids[line['synset_id']] = {'synset_offset': line['synset_offset'], 'story_'+type: line['story_'+type], 'stories': line['stories']}
     return word_ids
+
+def find_hyponyms(word, graph):
+    synsets = wn.synsets(word)
+    for synset in synsets:
+        hyponyms = synset.hyponyms()
+        for hyponym in hyponyms:
+            hyponym = hyponym.name()[0:hyponym.name().index(".")]
+            #print("Hyponym:" + str(hyponym))
+            node = qa.find_node(hyponym, graph)
+            if node is not None:
+                return node
+
+def find_hypernyms(word, graph):
+    synsets = wn.synsets(word)
+    for synset in synsets:
+        hypernyms = synset.hypernyms()
+        for hypernym in hypernyms:
+            hypernym = hypernym.name()[0:hypernym.name().index(".")]
+            #print("Hypernym:" + str(hypernym))
+            node = qa.find_node(hypernym, graph)
+            if node is not None:
+                return node
+        return None
+
 
 
 if __name__ == "__main__":
