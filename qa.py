@@ -258,14 +258,22 @@ def get_rel_score(question_relations, sentence_relations, q_rel, s_rel, rel_scor
 
 def get_we_rel_score(question_relations, sentence_relations, rel_score_dict, W2vecextractor):
     score = 0
-    for rel, word in question_relations.items():
-        q_word = word
-        s_word = sentence_relations[rel]
-        if q_word is not None and q_word == s_word:
-            print('Matched the', rel, '\t', q_word, 'and', s_word)
-            score += rel_score_dict[rel]
-        elif q_word is not None and s_word is not None:
-            score += rel_score_dict[rel] * we.compare_words(q_word, s_word, W2vecextractor)
+    for q_rel, q_word in question_relations.items():
+        for s_rel, s_word in sentence_relations.items():
+
+            if q_word is not None and q_word == s_word:
+                print('Matched the question', q_rel, q_word, 'to the sentence', s_rel, s_word)
+                modifier = rel_score_dict[s_rel] + rel_score_dict[q_rel]
+                we_match = 1
+                wn_match = 1
+                score += we_match + wn_match + modifier
+                break
+            elif q_word is not None and s_word is not None:
+                modifier = rel_score_dict[s_rel]
+                score += we.get_similarity_score(q_word, s_word, W2vecextractor, modifier)
+                if score > 0:
+                    break
+
     return score
 
 # Updated this to use dep graph to find best sentences based off of relationships between the dependencies in the
@@ -403,19 +411,30 @@ def test_best(sentences, qgraph, sgraph, question_type):
     if len(sgraph) != len(sentences):
         sentences[2].extend(sentences.pop(3))
     graph_sent_tuples = [(sgraph[i], sentences[i]) for i in range(len(sentences))]
+
     glove_w2v_file = "data/glove-w2v.txt"
     W2vecextractor = Word2vecExtractor(glove_w2v_file)
 
     rel_score_dict = {
 
-        'root': 3,
-        'nmod': 3,
-        'dobj': 2,
-        'nsubj': 2,
-        'nsubjpass': 2,
-        'vmod': 1,
-        'xcomp': 1,
-        'conj': 1
+        'root':         3,
+        'nmod':         2,
+        'dobj':         2,
+        'nsubj':        2,
+        'nsubjpass':    2,
+        'appos' :       2,
+        'vmod':         2,
+        'xcomp':        1,
+        'conj':         1,
+        'advcl':        1,
+        'compound':     0,
+        'aux':          0,
+        'case':         0,
+        'cop':          0,
+        'neg':          0,
+        'cc':           0,
+        'mark':         0
+
     }
     question_relations = get_graph_rels(qgraph, rel_score_dict)
     sent_tuples = []
@@ -425,37 +444,9 @@ def test_best(sentences, qgraph, sgraph, question_type):
         score = get_we_rel_score(question_relations, sentence_relations, rel_score_dict, W2vecextractor)
         sent_tuples.append((sent, sgraph, score))
 
-        # Create a list holding just the lowercase words in the sentence
-        sentence_words = [word.lower() for (word, tag) in sent]
-
-        # Where
-        if question_type == 'where':
-            for prep in LOC_PP:
-                if prep in sentence_words:
-                    score += 2
-
-        # Who
-
-        # When
-        if question_type == 'when':
-            for time_word in TIME_NN:
-                if time_word.lower() in sentence_words:
-                    score += 4
-                elif 'am' in sentence_words:
-                    score += 2
-
-        # Why
-        if question_type == 'why':
-            if 'because' in sentence_words:
-                score += 2
-
-        # Decision
-        if question_type == 'decision':
-            score += 0
 
     sent_tuples.sort(key=lambda x : x[2], reverse=True)
     return sent_tuples
-
 
 
 # Returns the best n sentences in a list and their respective scores in a list
