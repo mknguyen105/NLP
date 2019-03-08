@@ -242,9 +242,18 @@ def get_graph_rels(dep_graph, rel_score_dict):
 # rel_score_dict
 def get_rel_score(question_relations, sentence_relations, q_rel, s_rel, rel_score_dict):
     score = 0
-    if question_relations[q_rel] is not None:
-        if question_relations[q_rel] == sentence_relations[s_rel]:
-            score = rel_score_dict[q_rel]
+    q_word = question_relations[q_rel]
+    s_word = sentence_relations[s_rel]
+    root_match = 
+    if q_word is not None and s_word is not None and not root_match:
+        q_hnyms = dependency_stub.find_all_h_nyms([q_word])
+        for h in q_hnyms:
+            if h == s_word and q_word != 'be':
+                score += rel_score_dict[q_rel]
+                if s_word != q_word:
+                    print('MATCHING', s_word, 'to', q_word)
+       # if question_relations[q_rel] == sentence_relations[s_rel]:
+       #     score = rel_score_dict[q_rel]
 
     return score
 
@@ -285,11 +294,11 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
     # rel_score_dict['root'] points will be added to the sentence score.
     rel_score_dict = {
 
-    'root' :        3,
-    'nmod' :        2,
-    'dobj' :        2,
-    'nsubj' :       2,
-    'nsubjpass' :   2,
+    'root' :        1,
+    'nmod' :        1,
+    'dobj' :        1,
+    'nsubj' :       1,
+    'nsubjpass' :   1,
     'vmod' :        1,
     'xcomp' :       1,
     'conj' :        1,
@@ -303,10 +312,12 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
     'mark' :        0
 
     }
+    # How
+    if question_type == 'how':
+        rel_score_dict['root'] = 1
 
     glove_w2v_file = "data/glove-w2v.txt"
     W2vecextractor = Word2vecExtractor(glove_w2v_file)
-    d = we.compare_words('ignite', 'burn', W2vecextractor)
 
     # Find all of the dependencies listed as keys in the rel score dict for the question and store them as a dictionary
     # Format is {'nsubj' : 'crow', 'root': 'sit',...}
@@ -363,7 +374,6 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
         if question_type == 'decision':
             score += 0
 
-        # How
 
         # Which
 
@@ -743,7 +753,7 @@ def get_answer(question, story):
     # Getting best sentences
     best_sentences = get_best_sentences(q_dep, s_dep, sentences, question_type)
 #   best_sentences = test_best(sentences, q_dep, s_dep, question_type)
-    best_sentence_texts, best_sentence_scores = get_top_sentences(best_sentences, 3)
+    best_sentence_texts, best_sentence_scores = get_top_sentences(best_sentences, 1)
 
     answer = ' '.join(best_sentence_texts)
     for i in range(len(best_sentence_texts)):

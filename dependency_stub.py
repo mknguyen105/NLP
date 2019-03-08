@@ -81,9 +81,9 @@ def find_all_h_nyms(wlist):
             hyponyms = synset.hyponyms()
             for hypo in hyponyms:
                 hlist.append(hypo.name()[0:hypo.name().index(".")])
-            hypernyms = synset.hypernyms()
-            for hyper in hypernyms:
-                hlist.append(hyper.name()[0:hyper.name().index(".")])
+            #hypernyms = synset.hypernyms()
+            #for hyper in hypernyms:
+            #    hlist.append(hyper.name()[0:hyper.name().index(".")])
             lemmas = synset.lemma_names()
             for lemma in lemmas:
                 hlist.append(lemma)
