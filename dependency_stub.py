@@ -197,12 +197,6 @@ def find_who_answer(qtext, qgraph, sgraph):
     qwords = nltk.word_tokenize(qtext)
     # make sure that hyponyms/hypernyms from question not in answer
     qwords_h = find_all_h_nyms(qwords)
-
-    # loophole to answer blogs-02-15
-    # remove young man from qtext, so we can get it as an answer
-    if 'young man' in qtext:
-        qtext = re.sub('young man', '', qtext)
-        print(qtext)
     
     # if qword is a question type
     if qword.lower() in ['who', 'what', 'when', 'where', 'why', 'how', 'which']:
@@ -315,6 +309,27 @@ def find_who_answer(qtext, qgraph, sgraph):
 
             return " ".join(dep["word"] for dep in deps)
 
+    if len(deps) == 0:
+        print("looking for nsubj")
+        deps = []   
+        for node in sgraph.nodes.values():
+            for item in node["deps"]:
+                if item == 'nsubj' or item == 'compound' or item == 'det' or item == 'amod':
+                    address = node["deps"][item][0]
+                    rnode = sgraph.nodes[address]
+                    
+                    # make sure we only get one nsubj
+                    if len(deps) > 1:
+                        rel = []
+                        for d in deps:
+                            rel.append(d['rel'])
+                        if item not in rel:
+                            deps.append(rnode)
+                    else:
+                        deps.append(rnode)
+
+        return " ".join(dep["word"] for dep in deps)
+
     return None
 
 
@@ -338,7 +353,7 @@ if __name__ == '__main__':
     driver = QABase()
 
     # Get the first question and its story
-    q = driver.get_question("blogs-05-16")
+    q = driver.get_question("fables-01-16")
     story = driver.get_story(q["sid"])
     # get the dependency graph of the first question
     qgraph = q["dep"]
@@ -349,10 +364,10 @@ if __name__ == '__main__':
     # You would have to figure this out like in the chunking demo
     if q['type'] == 'story' or q['type'] == 'Story':
         stext = story['text']
-        sgraph = story["story_dep"][6]
+        sgraph = story["story_dep"][3]
     else:
         stext = story['sch']
-        sgraph = story["sch_dep"][6]
+        sgraph = story["sch_dep"][11]
     
     # print(qgraph)
     print(sgraph)
