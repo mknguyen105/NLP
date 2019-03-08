@@ -244,11 +244,10 @@ def get_rel_score(question_relations, sentence_relations, q_rel, s_rel, rel_scor
     score = 0
     q_word = question_relations[q_rel]
     s_word = sentence_relations[s_rel]
-    root_match = 
-    if q_word is not None and s_word is not None and not root_match:
+    if q_word is not None and s_word is not None:
         q_hnyms = dependency_stub.find_all_h_nyms([q_word])
         for h in q_hnyms:
-            if h == s_word and q_word != 'be':
+            if h == s_word and q_word != 'be' and h != 'be':
                 score += rel_score_dict[q_rel]
                 if s_word != q_word:
                     print('MATCHING', s_word, 'to', q_word)
@@ -294,11 +293,11 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
     # rel_score_dict['root'] points will be added to the sentence score.
     rel_score_dict = {
 
-    'root' :        1,
-    'nmod' :        1,
-    'dobj' :        1,
-    'nsubj' :       1,
-    'nsubjpass' :   1,
+    'root' :        3,
+    'nmod' :        2,
+    'dobj' :        2,
+    'nsubj' :       2,
+    'nsubjpass' :   2,
     'vmod' :        1,
     'xcomp' :       1,
     'conj' :        1,
@@ -312,6 +311,7 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
     'mark' :        0
 
     }
+
     # How
     if question_type == 'how':
         rel_score_dict['root'] = 1
@@ -435,26 +435,6 @@ def get_question_type(question):
         return first_word
     else:
         return 'decision'
-
-
-def compare(nodes, dep):
-    count = 0
-    count2 = 0
-
-    for node in nodes:
-        for graph_node in dep.nodes.values():
-             if graph_node['word'] == node['word']:
-                 count += 1
-
-    for node in nodes2:
-        for graph_node in dep2.nodes.values():
-            if graph_node['word'] == node['word']:
-                count2 += 1
-
-    if count > count2:
-        return True
-    else:
-        return False
 
 
 def compare_word(word, nodes):

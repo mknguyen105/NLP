@@ -71,7 +71,6 @@ def find_h_nyms(word, graph):
                 return node
     return None
 
-
 # finds all hyponyms/hypernyms of words in list
 def find_all_h_nyms(wlist):
     hlist = []
@@ -80,12 +79,17 @@ def find_all_h_nyms(wlist):
         for synset in synsets:
             hyponyms = synset.hyponyms()
             for hypo in hyponyms:
-                hlist.append(hypo.name()[0:hypo.name().index(".")])
-            #hypernyms = synset.hypernyms()
-            #for hyper in hypernyms:
-            #    hlist.append(hyper.name()[0:hyper.name().index(".")])
+                lem = hypo.name()[0:hypo.name().index(".")]
+                lem = lem.replace('_', ' ')
+                hlist.append(lem)
+            hypernyms = synset.hypernyms()
+            for hyper in hypernyms:
+                lem = hyper.name()[0:hyper.name().index(".")]
+                lem = lem.replace('_', ' ')
+                hlist.append(lem)
             lemmas = synset.lemma_names()
             for lemma in lemmas:
+                lemma = lemma.replace('_', ' ')
                 hlist.append(lemma)
     return hlist
 
