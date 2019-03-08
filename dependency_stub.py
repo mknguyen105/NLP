@@ -51,23 +51,23 @@ def find_h_nyms(word, graph):
     for synset in synsets:
         lemmas = synset.lemma_names()
         for lemma in lemmas:
-            print('lemma: ' + lemma)
             node = find_node(lemma, graph)
             if node is not None:
+                print('lemma: ' + lemma)
                 return node
         hyponyms = synset.hyponyms()
         for hypo in hyponyms:
             hypo = hypo.name()[0:hypo.name().index(".")]
-            print('hypo: ' + hypo)
             node = find_node(hypo, graph)
             if node is not None:
+                print('hypo: ' + hypo)
                 return node
         hypernyms = synset.hypernyms()
         for hyper in hypernyms:
             hyper = hyper.name()[0:hyper.name().index(".")]
-            print('hyper: ' + hyper)
             node = find_node(hyper, graph)
             if node is not None:
+                print('hyper: ' + hyper)
                 return node
     return None
 
@@ -93,7 +93,8 @@ def find_answer(qgraph, sgraph, rel):
 
     qtext = []
     for node in qgraph.nodes.values():
-        qtext.append(node["word"])
+        if node['word'] is not None:
+            qtext.append(node["word"])
     
     # if qword is a question type
     if qword.lower() in ['who', 'what', 'when', 'where', 'why', 'how', 'which']:
@@ -200,6 +201,13 @@ def remove_case(cdeps):
 def find_who_answer(qtext, qgraph, sgraph):
     qmain = find_main(qgraph)
     qword = qmain["word"]
+
+    # loophole for answers with narrator and young man
+    # remove young man from qtext, so we can get it as an answer
+    if 'narrator' in qtext or 'young man' in qtext:
+        qtext = re.sub('narrator', '', qtext)
+        qtext = re.sub('young man', '', qtext)
+        # print(qtext)
 
     qwords = nltk.word_tokenize(qtext)
     # make sure that hyponyms/hypernyms from question not in answer
@@ -356,11 +364,33 @@ def last_effort_answer(sgraph):
     return answer
 
 
+def last_effort_where_answer(sgraph):
+    print("looking at all cases")  
+    deps = [] 
+    cases = []
+    for node in sgraph.nodes.values():
+        if node['rel'] == 'case':
+            # print(node)
+            cases.append(node)
+    for node in cases:
+        # add next few nodes until we reach a noun
+        while node['tag'] is not None and 'NN' not in node['tag']:
+            deps.append(node)
+            if sgraph.nodes[node['address'] + 1] is not None:
+                node = sgraph.nodes[node['address'] + 1]
+            else:
+                break
+        if node['word'] is not None:
+            deps.append(node)
+
+    return " ".join(dep["word"] for dep in deps)
+
+
 if __name__ == '__main__':
     driver = QABase()
 
     # Get the first question and its story
-    q = driver.get_question("mc500.train.18.23")
+    q = driver.get_question("fables-01-5")
     story = driver.get_story(q["sid"])
     # get the dependency graph of the first question
     qgraph = q["dep"]
@@ -371,10 +401,10 @@ if __name__ == '__main__':
     # You would have to figure this out like in the chunking demo
     if q['type'] == 'story' or q['type'] == 'Story':
         stext = story['text']
-        sgraph = story["story_dep"][5]
+        sgraph = story["story_dep"][0]
     else:
         stext = story['sch']
-        sgraph = story["sch_dep"][3]
+        sgraph = story["sch_dep"][5]
     
     # print(qgraph)
     print(sgraph)
@@ -404,7 +434,7 @@ if __name__ == '__main__':
     if not answer:
         answer = find_answer(qgraph, sgraph, "dobj")
     if not answer:
-        answer = last_effort_answer(sgraph)
+        answer = last_effort_where_answer(sgraph)
     
     print("answer:", answer)
 
