@@ -90,6 +90,10 @@ def find_all_h_nyms(wlist):
 def find_answer(qgraph, sgraph, rel):
     qmain = find_main(qgraph)
     qword = qmain["word"]
+
+    qtext = []
+    for node in qgraph.nodes.values():
+        qtext.append(node["word"])
     
     # if qword is a question type
     if qword.lower() in ['who', 'what', 'when', 'where', 'why', 'how', 'which']:
@@ -171,6 +175,9 @@ def find_answer(qgraph, sgraph, rel):
             for node in sgraph.nodes.values():
                 if node['rel'] == 'case':
                     print(node)
+                    # add case if it's not in question
+                    if node['word'] not in qtext:
+                        deps.append(node)
                     for item in node["deps"]:
                         if item == rel:
                             # print(rel)
@@ -353,7 +360,7 @@ if __name__ == '__main__':
     driver = QABase()
 
     # Get the first question and its story
-    q = driver.get_question("fables-01-16")
+    q = driver.get_question("mc500.train.18.23")
     story = driver.get_story(q["sid"])
     # get the dependency graph of the first question
     qgraph = q["dep"]
@@ -364,10 +371,10 @@ if __name__ == '__main__':
     # You would have to figure this out like in the chunking demo
     if q['type'] == 'story' or q['type'] == 'Story':
         stext = story['text']
-        sgraph = story["story_dep"][3]
+        sgraph = story["story_dep"][5]
     else:
         stext = story['sch']
-        sgraph = story["sch_dep"][11]
+        sgraph = story["sch_dep"][3]
     
     # print(qgraph)
     print(sgraph)
@@ -389,16 +396,13 @@ if __name__ == '__main__':
     
     print(qtext)
 
-    answer = find_who_answer(qtext, qgraph, sgraph)
+    # answer = find_who_answer(qtext, qgraph, sgraph)
 
-    '''
     answer = find_answer(qgraph, sgraph, "nmod")
     if not answer:
         answer = find_answer(qgraph, sgraph, "nmod:poss")
     if not answer:
         answer = find_answer(qgraph, sgraph, "dobj")
-    '''
-
     if not answer:
         answer = last_effort_answer(sgraph)
     
