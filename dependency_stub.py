@@ -80,11 +80,26 @@ def find_all_h_nyms(wlist):
         for synset in synsets:
             hyponyms = synset.hyponyms()
             for hypo in hyponyms:
-                hlist.append(hypo.name()[0:hypo.name().index(".")])
+                lem = hypo.name()[0:hypo.name().index(".")]
+                lem = lem.replace('_', ' ')
+                hlist.append(lem)
             hypernyms = synset.hypernyms()
             for hyper in hypernyms:
-                hlist.append(hyper.name()[0:hyper.name().index(".")])
+                lem = hyper.name()[0:hyper.name().index(".")]
+                lem = lem.replace('_', ' ')
+                hlist.append(lem)
+            lemmas = synset.lemma_names()
+            for lemma in lemmas:
+                lemma = lemma.replace('_', ' ')
+                hlist.append(lemma)
     return hlist
+# Takes a list of hypernyms and tokenizes by individual word and removes stop words
+def format_hlist(hlist):
+    h_str = ' '.join(hlist)
+    hlist = h_str.split(' ')
+    hlist = [word for word in hlist if word not in nltk.corpus.stopwords.words('english')]
+    return hlist
+
 
 
 def find_answer(qgraph, sgraph, rel):
