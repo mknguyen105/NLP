@@ -36,6 +36,7 @@ def find_main(graph):
             return node
     return None
 
+
 def get_node_parent_siblings(node, graph):
     parent_address = node['head']
     parent = graph.nodes[parent_address]
@@ -70,7 +71,7 @@ def find_rel(graph, word, rel):
         if (node['word'] == word):
             # Find its rel
             if node['rel'] == rel:
-                #print("Rel Matched!")
+                # print("Rel Matched!")
                 deps = get_dependents(node, graph, [])  # third parameter []
                 deps = sorted(deps + [node], key=operator.itemgetter("address"))
 
@@ -103,14 +104,14 @@ def find_node(word, graph):
             else:
                 nword = lmtzr.lemmatize(nword, 'n')
             if nword == qword:
-                #print(nword)
+                # print(nword)
                 return node
     return None
 
 
 # Visited_nodes is a empty list
 # Node in a tree
-#node with word
+# node with word
 def get_dependents(node, graph, visited_nodes):  # visitednodes
 
     results = []
@@ -121,7 +122,7 @@ def get_dependents(node, graph, visited_nodes):  # visitednodes
         results.append(node)
     visited_nodes.append(node)
 
-    #Checks in case of nothing
+    # Checks in case of nothing
     for item in node["deps"]:
         visited_nodes.append(item)
 
@@ -133,8 +134,8 @@ def get_dependents(node, graph, visited_nodes):  # visitednodes
 
     return results
 
-def get_parents(node, graph, visited_nodes, address):
 
+def get_parents(node, graph, visited_nodes, address):
     node_address = node['address']
 
     results = []
@@ -143,13 +144,12 @@ def get_parents(node, graph, visited_nodes, address):
         return results
     visited_nodes.append(node)
 
-    #Loop through graph
+    # Loop through graph
 
     for graph_node in graph.nodes.values():
         head_node = graph_node.get('head', None)
         if head_node is not None and head_node == address:
             results.append(graph_node)
-
 
     return results
 
@@ -242,95 +242,146 @@ def get_graph_rels(dep_graph, rel_score_dict):
 # rel_score_dict
 def get_rel_score(question_relations, sentence_relations, q_rel, s_rel, rel_score_dict):
     score = 0
-    q_word = question_relations[q_rel]
-    s_word = sentence_relations[s_rel]
-    if q_word is not None and s_word is not None:
-        q_hnyms = dependency_stub.find_all_h_nyms([q_word])
-        for h in q_hnyms:
-            if h == s_word and q_word != 'be' and h != 'be':
-                score += rel_score_dict[q_rel]
-                if s_word != q_word:
-                    print('MATCHING', s_word, 'to', q_word)
-       # if question_relations[q_rel] == sentence_relations[s_rel]:
-       #     score = rel_score_dict[q_rel]
+    if question_relations[q_rel] == sentence_relations[s_rel]:
+        score = rel_score_dict[q_rel]
 
     return score
 
-def get_we_rel_score(question_relations, sentence_relations, rel_score_dict, W2vecextractor):
+
+def get_qtype_score(q_dep, s_dep, tagged_sentence, question_type):
     score = 0
-    for q_rel, q_word in question_relations.items():
-        for s_rel, s_word in sentence_relations.items():
 
-            if q_word is not None and q_word == s_word:
-                print('Matched the question', q_rel, q_word, 'to the sentence', s_rel, s_word)
-                modifier = rel_score_dict[s_rel] + rel_score_dict[q_rel]
-                we_match = 1
-                wn_match = 1
-                score += we_match + wn_match + modifier
-                break
-            elif q_word is not None and s_word is not None:
-                modifier = rel_score_dict[s_rel]
-                score += we.get_similarity_score(q_word, s_word, W2vecextractor, modifier)
-                if score > 0:
-                    break
+    dep_dict = {
 
+        'root': 3,
+        'nmod': 2,
+        'dobj': 2,
+        'nsubj': 2,
+        'nsubjpass': 2,
+        'vmod': 1,
+        'xcomp': 1,
+        'conj': 1,
+        'advcl': 1,
+        'compound': 1,
+        'aux': 1,
+        'case': 1,
+        'cop': 1,
+        'neg': 1,
+        'cc': 1,
+        'mark': 0
+    }
+
+    sentence_deps = get_graph_rels(s_dep, dep_dict)
+    question_deps = get_graph_rels(q_dep, dep_dict)
+
+    for dep, word in question_deps.items():
+        if word is not None:
+            if sentence_deps[dep] == question_deps[dep]:
+                score += 1
+
+    sent_words = [word.lower() for word, tag in tagged_sentence]
+    if question_type == 'why':
+        if 'because' in sent_words:
+            score += 1
+        elif 'in' in sent_words and 'order' in sent_words and 'to' in sent_words:
+            score += 1
+        elif 'for' in sent_words:
+            score += 1
+        elif 'so' in sent_words:
+            score += 1
+    if question_type == 'where':
+        if 'in' in sent_words or 'on' in sent_words or 'onto' in sent_words or 'under' in sent_words:
+            score += 1
     return score
+
 
 # Updated this to use dep graph to find best sentences based off of relationships between the dependencies in the
 # question and story sentences.
-def get_best_sentences(q_dep, s_dep, sentences, question_type):
-    """
-    Split question type, and find it through the dependency graph
+def get_best_sentences(question, story, question_type):
+    if question['type'] == "Story":
+        sentences = get_sentences(story['text'])
+        s_dep = story['story_dep']
+    else:  # sch | (story | sch)
+        sentences = get_sentences(story['sch'])
+        s_dep = story['sch_dep']
+    q_dep = question['dep']
 
-    What
-        If question is asking for a noun:
-            Find the root word of question and sentence, then find its nmod (root's dependency') and nsubj
-        If question is asking for a verb:
-            Find the nsubj & nmod (overlapping ex. cheese). Follow up the leaves, and theyre dependent on the question verb
-
-    Who
-         Find root
-         Find subj dependent of that root
-    Where
- sent1_raw), (sent2_dep, sent2_raw)...]
-    if len(s_dep) != len(sentences):
-        sentences[2].extend(sentences.pop(3))
-    graph_sent_tuples = [(s_dep[i], sentences[i]) for i in range(len(sentences))]
-
-    Why
-
-    """""
+    # Get question keywords and hypo/hypernyms
+    question_tagged = get_sentences(question['text'])[0]
+    question_verbs = [word.lower() for word, tag in question_tagged if tag[0] == 'V']
+    question_nouns = [word.lower() for word, tag in question_tagged if tag[0] == 'N']
+    question_keywords = question_verbs + question_nouns
+    question_hnyms = dependency_stub.find_all_h_nyms(question_keywords)
+    question_hnyms = dependency_stub.format_hlist(question_hnyms)
 
     # This creates tuples for each sentence in the story of the form [(sent1_dep, sent1_raw), (sent2_dep, sent2_raw)...]
     if len(s_dep) != len(sentences):
         sentences[2].extend(sentences.pop(3))
     graph_sent_tuples = [(s_dep[i], sentences[i]) for i in range(len(sentences))]
 
+    scored_sentences = []
+    for graph, sent in graph_sent_tuples:
+        score = 0
+        sentence_words = [word for word, tag in sent]
+        question_words = [word for word, tag in get_sentences(question['text'])[0]]
+        score += get_word_overlap(sentence_words, question_words)
+
+        sentence_verbs = [word.lower() for word, tag in sent if tag[0] == 'V']
+        sentence_nouns = [word.lower() for word, tag in sent if tag[0] == 'N']
+        sentence_keywords = sentence_nouns + sentence_verbs
+
+        # score += get_qtype_score(q_dep, graph, sent, question_type)
+        sent_tuple = (sent, graph, score)
+        scored_sentences.append(sent_tuple)
+
+    scored_sentences.sort(key=lambda x: x[2], reverse=True)
+    n = 5
+    top_sentences = scored_sentences[:n]
+
+    """for word in sentence_keywords:
+            if word in question_hnyms:
+                if word in sentence_verbs:
+                    score += 2
+                else:
+                    score += 1
+        sent_tuple = (sent, graph, score)
+        scored_sentences.append(sent_tuple)
+    scored_sentences.sort(key=lambda x: x[2], reverse=True)
+    top_4 =  scored_sentences[:4]
+
+    scored_sentences = []
+    for sent, graph, old_score in top_4:
+        score = 0
+        """
+
+    return scored_sentences
+
     # This is the dictionary that is used to check how many points to assign for matches between the dependency in the
     # question and sentence. The keys are the dependency, and the value is the score added to the sentence when there is
     # a match of that type in the question. So if the root of the question matches the nsubj of the sentence,
     # rel_score_dict['root'] points will be added to the sentence score.
-    rel_score_dict = {
+    dep_dict = {
 
-    'root' :        3,
-    'nmod' :        2,
-    'dobj' :        2,
-    'nsubj' :       2,
-    'nsubjpass' :   2,
-    'vmod' :        1,
-    'xcomp' :       1,
-    'conj' :        1,
-    'advcl' :       1,
-    'compound' :    1,
-    'aux' :         1,
-    'case' :        1,
-    'cop' :         1,
-    'neg' :         1,
-    'cc' :          1,
-    'mark' :        0
+        'root': 3,
+        'nmod': 2,
+        'dobj': 2,
+        'nsubj': 2,
+        'nsubjpass': 2,
+        'vmod': 1,
+        'xcomp': 1,
+        'conj': 1,
+        'advcl': 1,
+        'compound': 1,
+        'aux': 1,
+        'case': 1,
+        'cop': 1,
+        'neg': 1,
+        'cc': 1,
+        'mark': 0
 
     }
 
+    """
     # How
     if question_type == 'how':
         rel_score_dict['root'] = 1
@@ -344,10 +395,9 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
 
     # Iterate through each of the sentences in the story and check for matches of various types between the sentence and
     # the story
+    top_4 = scored_sentences[:4]
     scored_sentences = []
-    for sent_graph, sentence in graph_sent_tuples:
-
-
+    for sentence, sent_graph, score in top_4:
         score = 0
 
         # Find the sentence dependencies for each sentence and store in a dict just like we did for the question above
@@ -404,48 +454,48 @@ def get_best_sentences(q_dep, s_dep, sentences, question_type):
 
     # Sort the scored sentences in desc order
     scored_sentences.sort(key=lambda x: x[2], reverse=True)
+"""
+    # return scored_sentences
 
-    return scored_sentences
+
+def get_word_overlap(sentence_words, question_words):
+    score = 0
+    lmtzr = WordNetLemmatizer()
+    sentence_words = [word.lower() for word in sentence_words if
+                      word.lower() not in nltk.corpus.stopwords.words('english')]
+    question_words = [word.lower() for word in question_words if
+                      word.lower() not in nltk.corpus.stopwords.words('english')]
+    matched_words = []
+    for word1 in sentence_words:
+        for word2 in question_words:
+            if lmtzr.lemmatize(word1, 'v') == lmtzr.lemmatize(word2, 'v'):
+                score += 1
+            elif lmtzr.lemmatize(word1, 'n') == lmtzr.lemmatize(word2, 'n'):
+                score += 1
+
+    return score
+
 
 def test_best(sentences, qgraph, sgraph, question_type):
     if len(sgraph) != len(sentences):
         sentences[2].extend(sentences.pop(3))
     graph_sent_tuples = [(sgraph[i], sentences[i]) for i in range(len(sentences))]
-
     glove_w2v_file = "data/glove-w2v.txt"
     W2vecextractor = Word2vecExtractor(glove_w2v_file)
 
-    rel_score_dict = {
-
-        'root':         3,
-        'nmod':         2,
-        'dobj':         2,
-        'nsubj':        2,
-        'nsubjpass':    2,
-        'appos' :       2,
-        'vmod':         2,
-        'xcomp':        1,
-        'conj':         1,
-        'advcl':        1,
-        'compound':     0,
-        'aux':          0,
-        'case':         0,
-        'cop':          0,
-        'neg':          0,
-        'cc':           0,
-        'mark':         0
-
-    }
-    question_relations = get_graph_rels(qgraph, rel_score_dict)
     sent_tuples = []
     for sgraph, sent in graph_sent_tuples:
-        score = 0
-        sentence_relations = get_graph_rels(sgraph, rel_score_dict)
-        score = get_we_rel_score(question_relations, sentence_relations, rel_score_dict, W2vecextractor)
+        q_root = find_main(qgraph)['word']
+        s_root = find_main(sgraph)['word']
+        hnyms = dependency_stub.find_all_h_nyms([q_root])
+        hnyms = dependency_stub.format_hlist(hnyms)
+        if s_root in hnyms:
+            score += 1
+        score += we.get_sentence_similarity(sent, q_dep, W2vecextractor)
+        score = we.compare_words(q_root, s_root, W2vecextractor)
         sent_tuples.append((sent, sgraph, score))
 
-
-    sent_tuples.sort(key=lambda x : x[2], reverse=True)
+    sent_tuples.sort(key=lambda x: x[2], reverse=True)
     return sent_tuples
 
 
@@ -456,7 +506,7 @@ def get_top_sentences(best_sentence_tuples, n):
     for i in range(n):
         if i >= len(best_sentence_tuples):
             break
-        sentence = [word.lower() for word,tag in best_sentence_tuples[i][0]]
+        sentence = [word.lower() for word, tag in best_sentence_tuples[i][0]]
         sentence = ' '.join(sentence)
         sentences_text.append(sentence)
         scores.append(best_sentence_tuples[i][2])
@@ -468,7 +518,6 @@ def get_top_sentences(best_sentence_tuples, n):
 # keep us organized if we're later thrown questions that don't have the question word as the first word, or if there is
 # no question word in the question at all
 def get_question_type(question):
-
     question_types = ['who', 'what', 'when', 'where', 'why', 'how', 'which']
 
     words = nltk.word_tokenize(question['text'])
@@ -480,9 +529,8 @@ def get_question_type(question):
 
 
 def compare_word(word, nodes):
-
     for graph_node in nodes:
-        #print("Graph_Node['word']:" + str(graph_node['word']))
+        # print("Graph_Node['word']:" + str(graph_node['word']))
         graph_word = graph_node['word']
         if graph_word is not None and word is not None:
             if graph_word.lower() == word.lower():
@@ -516,7 +564,7 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
     # det of sentence dependency (ex. The )
     sent_det = get_dependency_word(sent_dep, 'det')
 
-    #Sentence Subjects
+    # Sentence Subjects
     sent_subjects = get_list(sent_dep, 'nsubj')
 
     # nmod phrase in sentence dependency
@@ -535,9 +583,9 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
 
     if q_type == "who":
         answer = dependency_stub.find_who_answer(qtext, q_dep, sent_dep)
-        
+
         if not answer:
-            #answer = dependency_stub.last_effort_answer(sent_dep)
+            # answer = dependency_stub.last_effort_answer(sent_dep)
             # Check if subj has a conjunction
             extension = find_rel(sent_dep, subj_word_sent, 'nmod')
             # Find nsubj
@@ -562,7 +610,7 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
                 answer = subj_word_sent
             if extension:
                 answer = answer + " " + extension + " " + subj_word_sent
-        
+
         return answer
 
     elif q_type == "what":
@@ -583,15 +631,15 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
             elif q_root_word.lower() == q_type.lower() and q_vbd is not None:
                 q_root = q_vbd
 
-            #If it overlaps, don't use that (If its in the question, its not in the answer)
+            # If it overlaps, don't use that (If its in the question, its not in the answer)
             q_dependents_root = get_dependents(q_root, sent_dep, [])
 
             print("Sentence Subjects: " + str(sent_subjects))
-            #Finding the correct subject
+            # Finding the correct subject
             for word in sent_subjects:
                 subj_word_sent = word
 
-            #Finding the right subject of a sentence
+            # Finding the right subject of a sentence
             if compare_word(subj_word_sent, q_dependents_root) is False and sent_nsubj_phrase is not None:
                 print("Answer is NSUBJ")
                 answer = str(sent_nsubj_phrase)
@@ -602,7 +650,7 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
                 return answer
             elif compare_word(sent_nmod, q_dependents_root) is True and sent_dobj_phrase is not None:
                 print("Answer is DOBJ")
-                #DOBJ Works
+                # DOBJ Works
                 answer = str(sent_dobj_phrase)
                 return answer
             else:
@@ -638,7 +686,7 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
         answer = dependency_stub.find_who_answer(qtext, q_dep, sent_dep)
         if not answer:
             answer = dependency_stub.last_effort_answer(sent_dep)
-        
+
         return answer
 
     elif q_type == 'how':
@@ -649,7 +697,7 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
         if advmod is not None:
             answer = advmod
         # A variation of the below solution will probably scale better, but doesn't work well for this question
-        #if get_dependency_word(sent_dep, 'advmod') is not None:
+        # if get_dependency_word(sent_dep, 'advmod') is not None:
         #    answer = get_dependency_phrase(sent_dep, 'advmod')
 
         # Second choice is to use the nmod if it exists
@@ -673,10 +721,10 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
             answer = get_subtree_phrase(node_fam)
             conj = find_node_rel('conj', sent_dep)
             cc = find_node_rel('cc', sent_dep)
-            #if cc is not None:
+            # if cc is not None:
             #    phrase = get_dependency_phrase(sent_dep, 'cc')
             #    answer += ' ' + phrase
-            #if conj is not None:
+            # if conj is not None:
             #    phrase = get_dependency_phrase(sent_dep, 'conj')
             #    answer += ' ' + phrase
 
@@ -685,13 +733,13 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
             answer = ''
             if marks is not None:
                 if len(marks) > 1:
-                    #min_depth = 1000000
-                    #shallow_node = None
+                    # min_depth = 1000000
+                    # shallow_node = None
                     nodes = []
                     for mark in marks:
-                    # Depth solution doesn't work due to incorrect parse tree
-                        #depth = get_node_depth(mark, sent_dep)
-                        #if min_depth < depth:
+                        # Depth solution doesn't work due to incorrect parse tree
+                        # depth = get_node_depth(mark, sent_dep)
+                        # if min_depth < depth:
                         #   min_depth = depth
                         #   shallow_node = mark
 
@@ -720,7 +768,7 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
             if node is not None:
                 answer = 'no'
                 return answer
-        
+
         answer = "yes"
         return answer
 
@@ -771,10 +819,10 @@ def get_answer(question, story):
     question_type = get_question_type(question)
     qtext = question['text']
     print(qtext, '\t', question['qid'])
-
+    q_tokenized = nltk.word_tokenize(qtext)
     # Getting best sentences
-    # best_sentences = get_best_sentences(q_dep, s_dep, sentences, question_type)
-    best_sentences = test_best(sentences, q_dep, s_dep, question_type)
+    best_sentences = get_best_sentences(question, story, question_type)
+    #   best_sentences = test_best(sentences, q_dep, s_dep, question_type)
     best_sentence_texts, best_sentence_scores = get_top_sentences(best_sentences, 1)
 
     answer = ' '.join(best_sentence_texts)
@@ -785,15 +833,14 @@ def get_answer(question, story):
     # 0 is the best sentence, 1 is the dep graph
     sent_dep = best_sentences[0][1]
 
-   # narrowed_answer = narrow_answer(qtext, question_type, q_dep, sent_dep, answer)
+    # narrowed_answer = narrow_answer(qtext, question_type, q_dep, sent_dep, answer)
     narrowed_answer = ' '.join(best_sentence_texts)
-    #print(dependency_stub.find_all_h_nyms(['dog', 'cat']))
+    # print(dependency_stub.find_all_h_nyms(['dog', 'cat']))
     if question_type == 'decision':
         narrowed_answer = 'yes no'
     return narrowed_answer
 
     # return answer
-
     ###     End of Your Code         ###
 
 
