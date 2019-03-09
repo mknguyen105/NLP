@@ -273,10 +273,10 @@ def get_qtype_score(q_dep, s_dep, tagged_sentence, question_type):
 
     sentence_deps = get_graph_rels(s_dep, dep_dict)
     question_deps = get_graph_rels(q_dep, dep_dict)
-
+    lmtzr = WordNetLemmatizer()
     for dep, word in question_deps.items():
-        if word is not None:
-            if sentence_deps[dep] == question_deps[dep]:
+        if word is not None and sentence_deps[dep] is not None:
+            if lmtzr.lemmatize(sentence_deps[dep], 'v') == lmtzr.lemmatize(question_deps[dep], 'v'):
                 score += 1
 
     sent_words = [word.lower() for word, tag in tagged_sentence]
@@ -290,7 +290,7 @@ def get_qtype_score(q_dep, s_dep, tagged_sentence, question_type):
         elif 'so' in sent_words:
             score += 1
     if question_type == 'where':
-        if 'in' in sent_words or 'on' in sent_words or 'onto' in sent_words or 'under' in sent_words:
+        if 'in' in sent_words or 'on' in sent_words or 'onto' in sent_words or 'under' in sent_words or 'by' in sent_words:
             score += 1
     return score
 
@@ -326,11 +326,6 @@ def get_best_sentences(question, story, question_type):
         question_words = [word for word, tag in get_sentences(question['text'])[0]]
         score += get_word_overlap(sentence_words, question_words)
 
-        sentence_verbs = [word.lower() for word, tag in sent if tag[0] == 'V']
-        sentence_nouns = [word.lower() for word, tag in sent if tag[0] == 'N']
-        sentence_keywords = sentence_nouns + sentence_verbs
-
-        # score += get_qtype_score(q_dep, graph, sent, question_type)
         sent_tuple = (sent, graph, score)
         scored_sentences.append(sent_tuple)
 
@@ -339,140 +334,33 @@ def get_best_sentences(question, story, question_type):
     top_sentences = scored_sentences[:n]
 
 
-# currently trash
     scored_sentences = []
     matched_words = []
     for sent, graph, old_score in top_sentences:
         score = 0
+
+        """
+        sentence_verbs = [word.lower() for word, tag in sent if tag[0] == 'V']
+        sentence_nouns = [word.lower() for word, tag in sent if tag[0] == 'N']
+        sentence_keywords = sentence_nouns + sentence_verbs
+
+        lmtzr = WordNetLemmatizer()
         for word in sentence_keywords:
+            word = lmtzr.lemmatize(word, 'v')
             if word not in matched_words:
                 if word in question_hnyms:
                     if word in question_verbs:
                         score += 2
                     else:
                         score += 1
+        """
         score += get_qtype_score(q_dep, graph, sent, question_type)
         sent_tuple = (sent, graph, score)
         scored_sentences.append(sent_tuple)
-    """for word in sentence_keywords:
-            if word in question_hnyms:
-                if word in sentence_verbs:
-                    score += 2
-                else:
-                    score += 1
-        sent_tuple = (sent, graph, score)
-        scored_sentences.append(sent_tuple)
-    scored_sentences.sort(key=lambda x: x[2], reverse=True)
-    top_4 =  scored_sentences[:4]
-
-    scored_sentences = []
-    for sent, graph, old_score in top_4:
-        score = 0
-        """
 
     scored_sentences.sort(key=lambda x: x[2], reverse=True)
+
     return scored_sentences
-
-    # This is the dictionary that is used to check how many points to assign for matches between the dependency in the
-    # question and sentence. The keys are the dependency, and the value is the score added to the sentence when there is
-    # a match of that type in the question. So if the root of the question matches the nsubj of the sentence,
-    # rel_score_dict['root'] points will be added to the sentence score.
-    dep_dict = {
-
-        'root': 3,
-        'nmod': 2,
-        'dobj': 2,
-        'nsubj': 2,
-        'nsubjpass': 2,
-        'vmod': 1,
-        'xcomp': 1,
-        'conj': 1,
-        'advcl': 1,
-        'compound': 1,
-        'aux': 1,
-        'case': 1,
-        'cop': 1,
-        'neg': 1,
-        'cc': 1,
-        'mark': 0
-
-    }
-
-    """
-    # How
-    if question_type == 'how':
-        rel_score_dict['root'] = 1
-
-    glove_w2v_file = "data/glove-w2v.txt"
-    W2vecextractor = Word2vecExtractor(glove_w2v_file)
-
-    # Find all of the dependencies listed as keys in the rel score dict for the question and store them as a dictionary
-    # Format is {'nsubj' : 'crow', 'root': 'sit',...}
-    question_relations = get_graph_rels(q_dep, rel_score_dict)
-
-    # Iterate through each of the sentences in the story and check for matches of various types between the sentence and
-    # the story
-    top_4 = scored_sentences[:4]
-    scored_sentences = []
-    for sentence, sent_graph, score in top_4:
-        score = 0
-
-        # Find the sentence dependencies for each sentence and store in a dict just like we did for the question above
-        sentence_relations = get_graph_rels(sent_graph, rel_score_dict)
-        #q_root = question_relations['root']
-        #s_root = sentence_relations['root']
-        #root_similarity = we.compare_words(q_root, s_root, W2vecextractor)
-
-        # Compare the list of all different dependency relation combinations between question and story
-        for q_rel, q_relation in question_relations.items():
-            for s_rel, s_relation in sentence_relations.items():
-                score += get_rel_score(question_relations, sentence_relations, q_rel, s_rel, rel_score_dict)
-
-        # Extra question specific checks
-
-        # Create a list holding just the lowercase words in the sentence
-        sentence_words = [word.lower() for (word, tag) in sentence]
-
-        # Where
-        if question_type == 'where':
-            for prep in LOC_PP:
-                if prep in sentence_words:
-                    score += 2
-
-        # Who
-
-
-        # When
-        if question_type == 'when':
-            for time_word in TIME_NN:
-                if time_word.lower() in sentence_words:
-                    score += 4
-                elif 'am' in sentence_words:
-                    score += 2
-
-        # Why
-        if question_type == 'why':
-            if 'because' in sentence_words:
-                score += 0
-
-
-        # Decision
-        if question_type == 'decision':
-            score += 0
-
-
-        # Which
-
-
-        # Add the sentence to the list of scored sentences with a final score. List contains tuples where the first val
-        # is the tokenized sentence/tag tuples list, and the second val is the score of the sentence.
-        # Format is a list of tuples like: [([(word1, tag1),...], 3, dep_graph), ([(word1, tag1),...], 2, dep_graph)...]
-        scored_sentences.append((sentence, sent_graph, score))
-
-    # Sort the scored sentences in desc order
-    scored_sentences.sort(key=lambda x: x[2], reverse=True)
-"""
-    # return scored_sentences
 
 
 def get_word_overlap(sentence_words, question_words):
