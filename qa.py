@@ -783,17 +783,20 @@ def get_answer(question, story):
 
     q_dep = question['dep']
     qtext = question['text']
-    print('\n' + qtext)
     question_type = get_question_type(question)
 
     best_sentences = get_best_sentences(question, story, question_type)
-    best_sentence_text = [word for (word, tag) in best_sentences[0][0]]
-    best_sentence = ' '.join(best_sentence_text)
-    best_sentence_score = best_sentences[0][1]
-    print(best_sentence + '\t' + str(best_sentence_score) + " " + question['qid'] + '\n')
+    best_sentence_texts, best_sentence_scores = get_top_sentences(best_sentences, 1)
+    best_sentence = ' '.join(best_sentence_texts)
 
-    sent_dep = best_sentences[0][2]
 
+    print('\n' + qtext)
+    for i in range(len(best_sentence_texts)):
+        print(best_sentence_texts[i] + '\t' + str(best_sentence_scores[i]) + " " + question['qid'] + '\n')
+
+    best_sentence = best_sentence_texts[0]
+    sent_dep = best_sentences[0][1]
+    sent_text = best_sentences[0][0]
     answer = narrow_answer(qtext, question_type, q_dep, sent_dep, best_sentence)
 
     qtext_list = qtext.split()
