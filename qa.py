@@ -338,6 +338,22 @@ def get_best_sentences(question, story, question_type):
     n = 5
     top_sentences = scored_sentences[:n]
 
+
+# currently trash
+    scored_sentences = []
+    matched_words = []
+    for sent, graph, old_score in top_sentences:
+        score = 0
+        for word in sentence_keywords:
+            if word not in matched_words:
+                if word in question_hnyms:
+                    if word in question_verbs:
+                        score += 2
+                    else:
+                        score += 1
+        score += get_qtype_score(q_dep, graph, sent, question_type)
+        sent_tuple = (sent, graph, score)
+        scored_sentences.append(sent_tuple)
     """for word in sentence_keywords:
             if word in question_hnyms:
                 if word in sentence_verbs:
@@ -354,6 +370,7 @@ def get_best_sentences(question, story, question_type):
         score = 0
         """
 
+    scored_sentences.sort(key=lambda x: x[2], reverse=True)
     return scored_sentences
 
     # This is the dictionary that is used to check how many points to assign for matches between the dependency in the

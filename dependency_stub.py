@@ -194,6 +194,13 @@ def find_answer(qgraph, sgraph, rel):
 
     return None
 
+# Takes a list of hypernyms and tokenizes by individual word and removes stop words
+def format_hlist(hlist):
+    h_str = ' '.join(hlist)
+    hlist = h_str.split(' ')
+    hlist = [word for word in hlist if word not in nltk.corpus.stopwords.words('english')]
+    return hlist
+
 
 def remove_case(cdeps):
     deps = []
