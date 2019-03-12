@@ -419,7 +419,7 @@ def get_question_type(question):
         last_word = last_word_node['word']
         # print('last word: ' + last_word)
         if last_word in LOC_PP:
-            qtype = 'where'  
+            qtype = 'where'
 
 
         """
@@ -433,8 +433,11 @@ def get_question_type(question):
         last_word_rel = last_word_node['rel']
         if 'do' in qtext:
             qtype = 'what'
-        elif last_word_rel == 'nsubj' or last_word_rel == 'nmod' or last_word_rel == 'dobj' and last_word is not 'name':
-            qtype = 'who'
+
+
+        elif last_word_rel == 'nsubj' or last_word_rel == 'nmod' or last_word_rel == 'dobj' or last_word is 'name':
+                qtype = 'who'
+
 
     return qtype
 
@@ -514,7 +517,7 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
         answer = dependency_stub.find_who_answer(qtext, q_dep, sent_dep)
         if not answer:
             answer = orig_answer
-        
+
         return answer
 
     elif q_type == "what":
@@ -720,7 +723,7 @@ def narrow_answer(qtext, q_type, q_dep, sent_dep, answer):
             if node is not None:
                 answer = 'no'
                 return answer
-        
+
         answer = "yes"
         return answer
 
@@ -773,6 +776,8 @@ def get_answer(question, story):
         text -- the raw text for the story version.
         sid --  the story id
     """
+
+    #print (question['difficulty'])
 
     if question['type'] == "Story":
         sentences = get_sentences(story['text'])

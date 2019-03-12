@@ -1,0 +1,181 @@
+difficulty	qid	sid	text	type	dep	par
+Discourse	mc500.train.25.8	mc500.train.25	Who threw rocks?	Story	"1	Who	who	_	WP	_	2	nsubj	_	_
+2	threw	throw	_	VBD	_	0	root	_	_
+3	rocks	rock	_	NNS	_	2	dobj	_	_
+4	?	?	_	.	_	2	punct	_	_"	(ROOT (SBARQ (WHNP (WP Who)) (SQ (VP (VBD threw) (NP (NNS rocks)))) (. ?)))
+Discourse	mc500.train.25.12	mc500.train.25	Who yelled at Cindy?	Story	"1	Who	who	_	WP	_	2	nsubj	_	_
+2	yelled	yell	_	VBD	_	0	root	_	_
+3	at	at	_	IN	_	4	case	_	_
+4	Cindy	Cindy	_	NNP	_	2	nmod	_	_
+5	?	?	_	.	_	2	punct	_	_"	(ROOT (SBARQ (WHNP (WP Who)) (SQ (VP (VBD yelled) (PP (IN at) (NP (NNP Cindy))))) (. ?)))
+Discourse	mc500.train.25.20	mc500.train.25	Who was happy?	Story	"1	Who	who	_	WP	_	0	root	_	_
+2	was	be	_	VBD	_	1	cop	_	_
+3	happy	happy	_	JJ	_	1	nsubj	_	_
+4	?	?	_	.	_	1	punct	_	_"	(ROOT (SBARQ (WHNP (WP Who)) (SQ (VBD was) (ADJP (JJ happy))) (. ?)))
+Discourse	mc500.train.111.5	mc500.train.111	Where did Will eat dinner?	Story	"1	Where	where	_	WRB	_	4	advmod	_	_
+2	did	do	_	VBD	_	4	aux	_	_
+3	Will	Will	_	NNP	_	4	nsubj	_	_
+4	eat	eat	_	VB	_	0	root	_	_
+5	dinner	dinner	_	NN	_	4	dobj	_	_
+6	?	?	_	.	_	4	punct	_	_"	(ROOT (SBARQ (WHADVP (WRB Where)) (SQ (VBD did) (NP (NNP Will)) (VP (VB eat) (NP (NN dinner)))) (. ?)))
+Discourse	mc500.train.111.14	mc500.train.111	What did will have with his biscuit?	Story	"1	What	what	_	WP	_	4	nsubj	_	_
+2	did	do	_	VBD	_	4	aux	_	_
+3	will	will	_	MD	_	4	aux	_	_
+4	have	have	_	VB	_	0	root	_	_
+5	with	with	_	IN	_	7	case	_	_
+6	his	he	_	PRP$	_	7	nmod:poss	_	_
+7	biscuit	biscuit	_	NN	_	4	nmod	_	_
+8	?	?	_	.	_	4	punct	_	_"	(ROOT (SBARQ (WHNP (WP What)) (SQ (VP (VBD did) (SBAR (S (VP (MD will) (VP (VB have) (PP (IN with) (NP (PRP$ his) (NN biscuit))))))))) (. ?)))
+Discourse	mc500.train.0.17	mc500.train.0	What did she do while at the beach?	Story	"1	What	what	_	WP	_	4	dobj	_	_
+2	did	do	_	VBD	_	4	aux	_	_
+3	she	she	_	PRP	_	4	nsubj	_	_
+4	do	do	_	VB	_	0	root	_	_
+5	while	while	_	IN	_	8	mark	_	_
+6	at	at	_	IN	_	8	case	_	_
+7	the	the	_	DT	_	8	det	_	_
+8	beach	beach	_	NN	_	4	advcl	_	_
+9	?	?	_	.	_	4	punct	_	_"	(ROOT (SBARQ (WHNP (WP What)) (SQ (VBD did) (NP (PRP she)) (VP (VB do) (SBAR (IN while) (FRAG (PP (IN at) (NP (DT the) (NN beach))))))) (. ?)))
+Discourse	mc500.train.0.20	mc500.train.0	What did Alyssa eat at the restaurant?	Story	"1	What	what	_	WP	_	4	dobj	_	_
+2	did	do	_	VBD	_	4	aux	_	_
+3	Alyssa	Alyssa	_	NNP	_	4	nsubj	_	_
+4	eat	eat	_	VB	_	0	root	_	_
+5	at	at	_	IN	_	7	case	_	_
+6	the	the	_	DT	_	7	det	_	_
+7	restaurant	restaurant	_	NN	_	4	nmod	_	_
+8	?	?	_	.	_	4	punct	_	_"	(ROOT (SBARQ (WHNP (WP What)) (SQ (VBD did) (NP (NNP Alyssa)) (VP (VB eat) (PP (IN at) (NP (DT the) (NN restaurant))))) (. ?)))
+Discourse	mc500.train.0.23	mc500.train.0	In Miami, where did Alyssa go first?	Story	"1	In	in	_	IN	_	2	case	_	_
+2	Miami	Miami	_	NNP	_	0	root	_	_
+3	,	,	_	,	_	2	punct	_	_
+4	where	where	_	WRB	_	7	advmod	_	_
+5	did	do	_	VBD	_	7	aux	_	_
+6	Alyssa	Alyssa	_	NNP	_	7	nsubj	_	_
+7	go	go	_	VB	_	2	acl:relcl	_	_
+8	first	first	_	RB	_	7	advmod	_	_
+9	?	?	_	.	_	2	punct	_	_"	(ROOT (SBARQ (PP (IN In) (NP (NNP Miami))) (, ,) (WHADVP (WRB where)) (SQ (VBD did) (NP (NNP Alyssa)) (VP (VB go) (ADVP (RB first)))) (. ?)))
+Discourse	mc500.train.0.24	mc500.train.0	Where did Alyssa go after the beach?	Story	"1	Where	where	_	WRB	_	4	advmod	_	_
+2	did	do	_	VBD	_	4	aux	_	_
+3	Alyssa	Alyssa	_	NNP	_	4	nsubj	_	_
+4	go	go	_	VB	_	0	root	_	_
+5	after	after	_	IN	_	7	case	_	_
+6	the	the	_	DT	_	7	det	_	_
+7	beach	beach	_	NN	_	4	nmod	_	_
+8	?	?	_	.	_	4	punct	_	_"	(ROOT (SBARQ (WHADVP (WRB Where)) (SQ (VBD did) (NP (NNP Alyssa)) (VP (VB go) (PP (IN after) (NP (DT the) (NN beach))))) (. ?)))
+Discourse	mc500.train.18.24	mc500.train.18	Which flowers were big?	Story	"1	Which	which	_	WDT	_	2	det	_	_
+2	flowers	flower	_	NNS	_	4	dobj	_	_
+3	were	be	_	VBD	_	4	cop	_	_
+4	big	big	_	JJ	_	0	root	_	_
+5	?	?	_	.	_	4	punct	_	_"	(ROOT (SBARQ (WHNP (WDT Which) (NNS flowers)) (SQ (VP (VBD were) (ADJP (JJ big)))) (. ?)))
+Discourse	mc500.train.18.25	mc500.train.18	After she woke up, where did Kelly go?	Story	"1	After	after	_	IN	_	3	mark	_	_
+2	she	she	_	PRP	_	3	nsubj	_	_
+3	woke	wake	_	VBD	_	9	advcl	_	_
+4	up	up	_	RP	_	3	compound:prt	_	_
+5	,	,	_	,	_	9	punct	_	_
+6	where	where	_	WRB	_	9	advmod	_	_
+7	did	do	_	VBD	_	9	aux	_	_
+8	Kelly	Kelly	_	NNP	_	9	nsubj	_	_
+9	go	go	_	VB	_	0	root	_	_
+10	?	?	_	.	_	9	punct	_	_"	(ROOT (SBARQ (SBAR (IN After) (S (NP (PRP she)) (VP (VBD woke) (PRT (RP up))))) (, ,) (WHADVP (WRB where)) (SQ (VBD did) (NP (NNP Kelly)) (VP (VB go))) (. ?)))
+Discourse	mc500.train.18.26	mc500.train.18	What did Kelly do after she had collected the flowers?	Story	"1	What	what	_	WP	_	4	dobj	_	_
+2	did	do	_	VBD	_	4	aux	_	_
+3	Kelly	Kelly	_	NNP	_	4	nsubj	_	_
+4	do	do	_	VB	_	0	root	_	_
+5	after	after	_	IN	_	8	mark	_	_
+6	she	she	_	PRP	_	8	nsubj	_	_
+7	had	have	_	VBD	_	8	aux	_	_
+8	collected	collect	_	VBN	_	4	advcl	_	_
+9	the	the	_	DT	_	10	det	_	_
+10	flowers	flower	_	NNS	_	8	dobj	_	_
+11	?	?	_	.	_	4	punct	_	_"	(ROOT (SBARQ (WHNP (WP What)) (SQ (VBD did) (NP (NNP Kelly)) (VP (VB do) (SBAR (IN after) (S (NP (PRP she)) (VP (VBD had) (VP (VBN collected) (NP (DT the) (NNS flowers)))))))) (. ?)))
+Discourse	fables-06-31	fables-06	Who lost his temper?	Story	"1	Who	who	_	WP	_	2	nsubj	_	_
+2	lost	lose	_	VBD	_	0	root	_	_
+3	his	he	_	PRP$	_	4	nmod:poss	_	_
+4	temper	temper	_	NN	_	2	dobj	_	_
+5	?	?	_	.	_	2	punct	_	_"	(ROOT (SBARQ (WHNP (WP Who)) (SQ (VP (VBD lost) (NP (PRP$ his) (NN temper)))) (. ?)))
+Discourse	fables-06-32	fables-06	Who was seized?	Story	"1	Who	who	_	WP	_	3	nsubjpass	_	_
+2	was	be	_	VBD	_	3	auxpass	_	_
+3	seized	seize	_	VBN	_	0	root	_	_
+4	?	?	_	.	_	3	punct	_	_"	(ROOT (SBARQ (WHNP (WP Who)) (SQ (VBD was) (VP (VBN seized))) (. ?)))
+Discourse	fables-06-33	fables-06	Did the Lion laugh?	Story	"1	Did	do	_	VBD	_	0	root	_	_
+2	the	the	_	DT	_	4	det	_	_
+3	Lion	Lion	_	NNP	_	4	compound	_	_
+4	laugh	laugh	_	NN	_	1	dobj	_	_
+5	?	?	_	.	_	1	punct	_	_"	(ROOT (SQ (VBD Did) (NP (DT the) (NNP Lion)) (NP (NN laugh)) (. ?)))
+Discourse	fables-06-34	fables-06	What did the lion do after laughing?	Story	"1	What	what	_	WP	_	5	dobj	_	_
+2	did	do	_	VBD	_	5	aux	_	_
+3	the	the	_	DT	_	4	det	_	_
+4	lion	lion	_	NN	_	5	nsubj	_	_
+5	do	do	_	VB	_	0	root	_	_
+6	after	after	_	IN	_	7	mark	_	_
+7	laughing	laugh	_	VBG	_	5	advcl	_	_
+8	?	?	_	.	_	5	punct	_	_"	(ROOT (SBARQ (WHNP (WP What)) (SQ (VBD did) (NP (DT the) (NN lion)) (VP (VB do) (PP (IN after) (S (VP (VBG laughing)))))) (. ?)))
+Discourse	fables-06-35	fables-06	What did the mouse do after hearing and recognizing the lion’s roars?	Story	"1	What	what	_	WP	_	5	dobj	_	_
+2	did	do	_	VBD	_	5	aux	_	_
+3	the	the	_	DT	_	4	det	_	_
+4	mouse	mouse	_	NN	_	5	nsubj	_	_
+5	do	do	_	VB	_	0	root	_	_
+6	after	after	_	IN	_	7	case	_	_
+7	hearing	hearing	_	NN	_	5	nmod	_	_
+8	and	and	_	CC	_	5	cc	_	_
+9	recognizing	recognize	_	VBG	_	5	conj	_	_
+10	the	the	_	DT	_	11	det	_	_
+11	lion	lion	_	NN	_	13	nmod:poss	_	_
+12	's	's	_	POS	_	11	case	_	_
+13	roars	roar	_	VBZ	_	9	dobj	_	_
+14	?	?	_	.	_	5	punct	_	_"	(ROOT (SBARQ (WHNP (WP What)) (SQ (VBD did) (NP (DT the) (NN mouse)) (VP (VB do) (UCP (PP (IN after) (NP (NN hearing))) (CC and) (S (VP (VBG recognizing) (SBAR (S (NP (DT the) (NN lion) (POS 's)) (VP (VBZ roars))))))))) (. ?)))
+Discourse	fables-06-36	fables-06	What did the mouse do after running to the spot?	Story	"1	What	what	_	WP	_	5	dobj	_	_
+2	did	do	_	VBD	_	5	aux	_	_
+3	the	the	_	DT	_	4	det	_	_
+4	mouse	mouse	_	NN	_	5	nsubj	_	_
+5	do	do	_	VB	_	0	root	_	_
+6	after	after	_	IN	_	7	mark	_	_
+7	running	run	_	VBG	_	5	advcl	_	_
+8	to	to	_	TO	_	10	case	_	_
+9	the	the	_	DT	_	10	det	_	_
+10	spot	spot	_	NN	_	7	nmod	_	_
+11	?	?	_	.	_	5	punct	_	_"	(ROOT (SBARQ (WHNP (WP What)) (SQ (VBD did) (NP (DT the) (NN mouse)) (VP (VB do) (PP (IN after) (S (VP (VBG running) (PP (TO to) (NP (DT the) (NN spot)))))))) (. ?)))
+Discourse	fables-06-37	fables-06	Who asked to be let go?	Story	"1	Who	who	_	WP	_	2	nsubj	_	_
+2	asked	ask	_	VBD	_	0	root	_	_
+3	to	to	_	TO	_	5	mark	_	_
+4	be	be	_	VB	_	5	auxpass	_	_
+5	let	let	_	VB	_	2	xcomp	_	_
+6	go	go	_	VB	_	5	ccomp	_	_
+7	?	?	_	.	_	2	punct	_	_"	(ROOT (SBARQ (WHNP (WP Who)) (SQ (VP (VBD asked) (S (VP (TO to) (VP (VB be) (VP (VB let) (VP (VB go)))))))) (. ?)))
+Discourse	blogs-06-23	blogs-06	What was the husband unsuccessful at?	Story	"1	What	what	_	WP	_	5	dobj	_	_
+2	was	be	_	VBD	_	1	cop	_	_
+3	the	the	_	DT	_	4	det	_	_
+4	husband	husband	_	NN	_	5	nsubj	_	_
+5	unsuccessful	unsuccessful	_	JJ	_	0	root	_	_
+6	at	at	_	IN	_	5	dep	_	_
+7	?	?	_	.	_	5	punct	_	_"	(ROOT (SBARQ (WHNP (WP What)) (SQ (VBD was) (NP (DT the) (NN husband)) (ADJP (JJ unsuccessful) (PP (IN at)))) (. ?)))
+Discourse	blogs-06-24	blogs-06	What happened after the husband went to get the cookies?	Story	"1	What	what	_	WP	_	2	nsubj	_	_
+2	happened	happen	_	VBD	_	0	root	_	_
+3	after	after	_	IN	_	6	mark	_	_
+4	the	the	_	DT	_	5	det	_	_
+5	husband	husband	_	NN	_	6	nsubj	_	_
+6	went	go	_	VBD	_	2	advcl	_	_
+7	to	to	_	TO	_	8	mark	_	_
+8	get	get	_	VB	_	6	xcomp	_	_
+9	the	the	_	DT	_	10	det	_	_
+10	cookies	cookie	_	NNS	_	8	dobj	_	_
+11	?	?	_	.	_	2	punct	_	_"	(ROOT (SBARQ (WHNP (WP What)) (SQ (VP (VBD happened) (SBAR (IN after) (S (NP (DT the) (NN husband)) (VP (VBD went) (S (VP (TO to) (VP (VB get) (NP (DT the) (NNS cookies)))))))))) (. ?)))
+Discourse	blogs-06-25	blogs-06	Why did the husband shut the door?	Story	"1	Why	why	_	WRB	_	5	advmod	_	_
+2	did	do	_	VBD	_	5	aux	_	_
+3	the	the	_	DT	_	4	det	_	_
+4	husband	husband	_	NN	_	5	nsubj	_	_
+5	shut	shut	_	VBD	_	0	root	_	_
+6	the	the	_	DT	_	7	det	_	_
+7	door	door	_	NN	_	5	dobj	_	_
+8	?	?	_	.	_	5	punct	_	_"	(ROOT (SBARQ (WHADVP (WRB Why)) (SQ (VBD did) (NP (DT the) (NN husband)) (VP (VBD shut) (NP (DT the) (NN door)))) (. ?)))
+Discourse	blogs-06-26	blogs-06	What happened after the husband opened the door?	Story	"1	What	what	_	WP	_	2	nsubj	_	_
+2	happened	happen	_	VBD	_	0	root	_	_
+3	after	after	_	IN	_	6	mark	_	_
+4	the	the	_	DT	_	5	det	_	_
+5	husband	husband	_	NN	_	6	nsubj	_	_
+6	opened	open	_	VBD	_	2	advcl	_	_
+7	the	the	_	DT	_	8	det	_	_
+8	door	door	_	NN	_	6	dobj	_	_
+9	?	?	_	.	_	2	punct	_	_"	(ROOT (SBARQ (WHNP (WP What)) (SQ (VP (VBD happened) (SBAR (IN after) (S (NP (DT the) (NN husband)) (VP (VBD opened) (NP (DT the) (NN door))))))) (. ?)))
+Discourse	blogs-06-27	blogs-06	What got damaged?	Story	"1	What	what	_	WDT	_	3	nsubjpass	_	_
+2	got	get	_	VBD	_	3	auxpass	_	_
+3	damaged	damage	_	VBN	_	0	root	_	_
+4	?	?	_	.	_	3	punct	_	_"	(ROOT (SBARQ (WHNP (WDT What)) (SQ (VP (VBD got) (VP (VBN damaged)))) (. ?)))
