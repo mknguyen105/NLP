@@ -745,6 +745,22 @@ def story_about(s_dep):
     answer = 'a ' + char[0][0] + ' and a ' + char[1][0]
     return answer
 
+def learn_story(story_text):
+    set = {}
+    sentences = nltk.sent_tokenize(story_text)
+    for sent in sentences:
+        print (sent)
+        words = nltk.word_tokenize(sent)
+        pos = nltk.pos_tag(words)
+        #rint(pos)
+        #set[sent][0] = #How to Detect It's a Person
+    #set[sent][1] = //doing
+
+    #print(set)
+
+
+
+
 
 def get_answer(question, story):
     """
@@ -757,7 +773,7 @@ def get_answer(question, story):
         par -- A list of constituency parses for the question sentence.
         text -- The raw text of story.
         sid --  The story id.
-        difficulty -- easy, medium, or hard
+        difficulty -- easy, medium, or hard DISCOURSE
         type -- whether you need to use the 'sch' or 'story' versions
                 of the .
         qid  --  The id of the question.
@@ -777,14 +793,15 @@ def get_answer(question, story):
         sid --  the story id
     """
 
-    #print (question['difficulty'])
 
     if question['type'] == "Story":
         sentences = get_sentences(story['text'])
         s_dep = story['story_dep']
+        learn_story(story['text'])
     else:  # sch | (story | sch)
         sentences = get_sentences(story['sch'])
         s_dep = story['sch_dep']
+        learn_story(story['text'])
 
     q_dep = question['dep']
     qtext = question['text']
@@ -810,6 +827,7 @@ def get_answer(question, story):
         answer = story_about(s_dep)
         
     print('answer: ' + answer)
+    #return answer
     return answer
 
     # return answer
