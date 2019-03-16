@@ -314,16 +314,16 @@ def get_best_sentences(question, story, question_type):
     # This creates tuples for each sentence in the story of the form [(sent1_dep, sent1_raw), (sent2_dep, sent2_raw)...]
     if len(s_dep) != len(sentences):
         sentences[2].extend(sentences.pop(3))
-    graph_sent_tuples = [(s_dep[i], sentences[i]) for i in range(len(sentences))]
+    graph_sent_tuples = [(s_dep[i], sentences[i], i) for i in range(len(sentences))]
 
     scored_sentences = []
-    for graph, sent in graph_sent_tuples:
+    for graph, sent, i in graph_sent_tuples:
         score = 0
         sentence_words = [word for word, tag in sent]
         question_words = [word for word, tag in get_sentences(question['text'])[0]]
         score += get_word_overlap(sentence_words, question_words)
 
-        sent_tuple = (sent, graph, score)
+        sent_tuple = (sent, graph, score, i)
         scored_sentences.append(sent_tuple)
 
     scored_sentences.sort(key=lambda x: x[2], reverse=True)
@@ -333,7 +333,7 @@ def get_best_sentences(question, story, question_type):
 
     scored_sentences = []
     matched_words = []
-    for sent, graph, old_score in top_sentences:
+    for sent, graph, old_score, i in top_sentences:
         score = 0
 
         """
@@ -352,7 +352,7 @@ def get_best_sentences(question, story, question_type):
                         score += 1
         """
         score += get_qtype_score(q_dep, graph, sent, question_type)
-        sent_tuple = (sent, graph, score)
+        sent_tuple = (sent, graph, score, i)
         scored_sentences.append(sent_tuple)
 
     scored_sentences.sort(key=lambda x: x[2], reverse=True)
@@ -381,6 +381,7 @@ def get_word_overlap(sentence_words, question_words):
 def get_top_sentences(best_sentence_tuples, n):
     sentences_text = []
     scores = []
+    sent_num = []
     for i in range(n):
         if i >= len(best_sentence_tuples):
             break
@@ -388,7 +389,8 @@ def get_top_sentences(best_sentence_tuples, n):
         sentence = ' '.join(sentence)
         sentences_text.append(sentence)
         scores.append(best_sentence_tuples[i][2])
-    return sentences_text, scores
+        sent_num.append(best_sentence_tuples[i][3])
+    return sentences_text, scores, sent_num
 
 # This returns who what when where why or how
 # I know for this assignment we could probably just use the first word and exclude the funtion, but I figure this will
@@ -417,8 +419,9 @@ def get_question_type(question):
         # find where type questions
         last_word_node = qgraph.nodes[len(qgraph.nodes.values()) - 2]
         last_word = last_word_node['word']
+        last_word_rel = last_word_node['rel']
         # print('last word: ' + last_word)
-        if last_word in LOC_PP:
+        if last_word in LOC_PP or last_word_rel == 'nmod':
             qtype = 'where'
 
 
@@ -430,12 +433,11 @@ def get_question_type(question):
 
         """
         # find who type questions
-        last_word_rel = last_word_node['rel']
         if 'do' in qtext:
             qtype = 'what'
 
 
-        elif last_word_rel == 'nsubj' or last_word_rel == 'nmod' or last_word_rel == 'dobj' or last_word is 'name':
+        elif last_word_rel == 'nsubj' or last_word_rel == 'dobj' or last_word_rel == 'root' or last_word is 'name':
                 qtype = 'who'
 
 
@@ -749,7 +751,7 @@ def learn_story(story_text):
     set = {}
     sentences = nltk.sent_tokenize(story_text)
     for sent in sentences:
-        print (sent)
+        # print (sent)
         words = nltk.word_tokenize(sent)
         pos = nltk.pos_tag(words)
         #rint(pos)
@@ -757,9 +759,6 @@ def learn_story(story_text):
     #set[sent][1] = //doing
 
     #print(set)
-
-
-
 
 
 def get_answer(question, story):
@@ -793,8 +792,7 @@ def get_answer(question, story):
         sid --  the story id
     """
 
-
-    if question['type'] == "Story":
+    if question['type'] == "Story" or question['type'] == "story":
         sentences = get_sentences(story['text'])
         s_dep = story['story_dep']
         learn_story(story['text'])
@@ -808,7 +806,7 @@ def get_answer(question, story):
     question_type = get_question_type(question)
 
     best_sentences = get_best_sentences(question, story, question_type)
-    best_sentence_texts, best_sentence_scores = get_top_sentences(best_sentences, 1)
+    best_sentence_texts, best_sentence_scores, best_sentence_num = get_top_sentences(best_sentences, 1)
     best_sentence = ' '.join(best_sentence_texts)
 
 
@@ -816,6 +814,7 @@ def get_answer(question, story):
     for i in range(len(best_sentence_texts)):
         print(best_sentence_texts[i] + '\t' + str(best_sentence_scores[i]) + " " + question['qid'] + '\n')
 
+    best_sentence_num = best_sentence_num[0]
     best_sentence = best_sentence_texts[0]
     sent_dep = best_sentences[0][1]
     sent_text = best_sentences[0][0]
@@ -825,6 +824,14 @@ def get_answer(question, story):
     # print(qtext_list)
     if question_type.lower() == 'who' and 'about?' in qtext_list:
         answer = story_about(s_dep)
+    
+    pronouns = ['they', 'he', 'she', 'them', 'it']
+    # find pronoun in answer
+    # if answer is a pronoun, find nsubj from previous sentence
+    answer_list = answer.split()
+    for a in answer_list:
+        if a.lower() in pronouns:
+            answer = dependency_stub.refine_who_answer(s_dep, sent_dep, best_sentence_num)
         
     print('answer: ' + answer)
     #return answer
